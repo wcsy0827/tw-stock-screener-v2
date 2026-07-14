@@ -22,15 +22,17 @@ python main.py --dry-run --no-cache
 - 終端機依序印出 Step 1 ~ Step 5，過程中不拋例外，結束碼為 0。
 - `data/universe_roster.json` 原本不存在（或是舊的），Step 1 印出「前次名單 0 支」
   （首次執行的正常狀態）。
-- 結尾印出「=== 結果摘要 ===」，附 Regime／廣度／HV20／Universe→L1→L2 數量。
+- 結尾印出「=== 結果摘要 ===」，附 Regime／廣度／波動率／Universe→L1→L2 數量。
 
 **檢查清單**：
 - [ ] `Regime` 是五象限之一：`BULL_TREND`/`CONSOLIDATION`/`CONSOLIDATION_VOLATILE`/
       `PANIC_REVERSAL`/`BEAR_DISTRIBUTION`，不是空字串或例外訊息
 - [ ] `breadth_pct` 介於 0~100 之間
-- [ ] `hv20` 是正數（通常台股在 10~40% 區間，若出現 `hv_ok: false` 代表 `^TWII`
-      下載失敗，改用 fallback 值 20.0——這種情況下 Regime 判斷仍會執行，但要留意
-      當天的 Regime 標籤可信度較低）
+- [ ] `vix_source` 是 `"taifex"`（正常情況，用真 VIX）。若持續是
+      `"hv20_fallback"` 代表 TAIFEX 下載端可能失效，需要檢查 `src/taifex_vix.py`
+      的 URL／解析邏輯是否仍對應網站結構（見 README「未解決的設計問題」第1點）
+- [ ] `vix_value` 是正數（真 VIX 通常在 15~40 區間，HV20 fallback 通常在
+      10~40% 區間，量級相近）
 - [ ] `universe_count` 介於 150~180 之間（名單遲滯的容許區間，見 README）
 - [ ] `l1_passed_count` 明顯小於 `universe_count` 但不是 0（正常應該是八九成通過，
       因為 universe 本身已是流動性排序後的池子）
@@ -90,13 +92,14 @@ python main.py --dry-run --no-cache
 | `[universe] ISIN 產業別名稱抓取失敗` | ISIN 頁面編碼/結構變動，或暫時無法連線 | 不中斷流程，`sector` 會 fallback 為 `t187ap03_L` 的數字代碼；若長期出現需檢查 `universe.fetch_industry_names()` 的解析邏輯是否仍對應頁面結構 |
 | `[fetcher] 下載失敗` 重試多次後仍失敗 | yfinance/Yahoo 端流量限制或網路問題 | 稍後重跑；若整批持續失敗，考慮減少 `fetcher.BATCH_SIZE` |
 | `candidate_count: 0` 但 Regime 不是 `BEAR_DISTRIBUTION` | L2 門檻可能偏高，或當天大盤確實極弱 | 檢查 `data/candidates.json` 的 `l1_passed_count`，若 L1 通過數正常但 L2 掉到 0，屬於當天市況真的低迷，不一定是 bug |
-| `hv_ok: false` | `^TWII` 下載失敗 | 檢查網路；此時 HV20 為 fallback 值 20.0，Regime 判斷仍會執行但可信度較低 |
+| `vix_source: "hv20_fallback"` | TAIFEX 該月資料檔下載失敗或該月尚無資料 | 檢查網路；偶發可忽略（自動 fallback），若連續多日出現需檢查 `src/taifex_vix.py` 的 URL 格式是否仍對應 TAIFEX 網站結構 |
 
 ## 已知限制（測試時心裡有數，不是 bug）
 
 以下是 README「未解決的設計問題」列出的既知限制，人工測試時不需要為此回報：
 
-- HV20 是波動率的落後指標替代 VIX，語意上不等於前瞻隱含波動率
+- 真 VIX（TAIFEX）已接上，但邊界值因歷史尚淺暫時沿用 HV20 校準值，兩者量級可比
+  但不完全等價
 - Universe 是流動性近似範圍，不是官方 0050/0051 成分股
 - 目前只涵蓋 TWSE 上市（`.TW`），不含 TPEx 上櫃（`.TWO`）
 - 沒有 L3 AI 精選、沒有 tracker 追蹤、沒有報告發布（這些是 Phase 3 才做）

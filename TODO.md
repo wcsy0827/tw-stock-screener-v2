@@ -9,12 +9,17 @@
 Universe 遲滯排序、HV20/L1 門檻校準、產業中文名稱、人工測試手冊皆已完成，詳見
 README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/calibrate_l1.py`。
 
-## Phase 2.5（未開始，時間盒限定）
+## Phase 2.5（已完成，見 commit）
 
-- [ ] 探測 TAIFEX 台指選擇權波動率指數（真 VIX 等價物）是否有穩定可用的每日資料來源
-      （先前試的 `taifex.com.tw/cht/3/vixQuote` 404，頁面結構可能已變動）。
-  - 找得到 → 寫一個帶 fallback 的抓取器（抓不到自動退回 `market.py` 現有的 HV20 邏輯）
-  - 找不到 → 記錄結論在 README，只用 HV20，不要讓這條路擋住主線開發
+找到 TAIFEX 真 VIX（臺指選擇權波動率指數）並接上，見 `src/taifex_vix.py`、
+`market.py` 的 `fetch_volatility_signal()`。已知限制與後續待辦：
+
+- [ ] **累積 6~12 個月 `data/taifex_vix_history.json` 後，重新用真 VIX 自己的分布
+      校準 `market.VOL_LOW_THRESHOLD`/`VOL_HIGH_THRESHOLD`，不要繼續沿用 HV20
+      校準值**（TAIFEX 該 endpoint 只保留約 3~4 個月近期資料，這次沒有足夠深度
+      可以獨立校準，暫時沿用 HV20 的 19.44/27.49）。
+- [ ] 若長期觀察 `vix_source` 經常是 `hv20_fallback`（而非 `taifex`），代表 TAIFEX
+      抓取端可能不穩定，需要回頭排查 `taifex_vix.py` 的 URL/解析邏輯是否過期。
 
 ## Phase 3（未開始，需要先抗辯審查再動手）
 

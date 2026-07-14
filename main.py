@@ -31,6 +31,29 @@ import universe
 
 
 OUTPUT_PATH = Path(__file__).parent / "data" / "candidates.json"
+VIX_HISTORY_PATH = Path(__file__).parent / "data" / "taifex_vix_history.json"
+
+
+def _record_vix_history(market_date: str, vol_value: float, vix_source: str) -> None:
+    """累積波動率訊號歷史（供未來重新校準用），同一 market_date 重跑時覆寫而非重複追加。"""
+    history = []
+    if VIX_HISTORY_PATH.exists():
+        try:
+            with open(VIX_HISTORY_PATH, "r", encoding="utf-8") as f:
+                history = json.load(f)
+        except Exception:
+            history = []
+
+    entry = {"market_date": market_date, "vix_value": vol_value, "vix_source": vix_source}
+    if history and history[-1].get("market_date") == market_date:
+        history[-1] = entry
+    else:
+        history.append(entry)
+
+    VIX_HISTORY_PATH.parent.mkdir(exist_ok=True)
+    with open(VIX_HISTORY_PATH, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+    print(f"[main] 波動率歷史已記錄：{market_date} = {vol_value}%（{vix_source}），累積 {len(history)} 筆")
 
 
 def run(no_cache: bool = False) -> dict:
@@ -70,7 +93,7 @@ def run(no_cache: bool = False) -> dict:
     breadth_input = {s: price_data[s] for s in symbols if s in price_data}
     if market.BENCHMARK_TICKER in price_data:
         breadth_input[market.BENCHMARK_TICKER] = price_data[market.BENCHMARK_TICKER]
-    regime, breadth_pct, hv20, hv_ok = market.fetch_regime_quick(breadth_input)
+    regime, breadth_pct, vol_value, vix_source = market.fetch_regime_quick(breadth_input)
 
     print("[main] Step 3: 抓取基本面資訊")
     info_data = None if no_cache else fetcher.load_info_cache()
@@ -89,13 +112,14 @@ def run(no_cache: bool = False) -> dict:
 
     market_date = str(price_data[market.BENCHMARK_TICKER].index[-1].date()) if market.BENCHMARK_TICKER in price_data else str(date.today())
     universe.save_roster(symbols, market_date)
+    _record_vix_history(market_date, vol_value, vix_source)
 
     result = {
         "market_date": market_date,
         "regime": regime,
         "breadth_pct": breadth_pct,
-        "hv20": hv20,
-        "hv_ok": hv_ok,
+        "vix_value": vol_value,
+        "vix_source": vix_source,
         "universe_count": len(symbols),
         "l1_passed_count": len(l1_passed),
         "candidate_count": len(candidates),
@@ -117,7 +141,7 @@ def main() -> None:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
     print(f"\n[main] === 結果摘要（{result['market_date']}）===")
-    print(f"[main] Regime: {result['regime']}（廣度={result['breadth_pct']}%, HV20={result['hv20']}%）")
+    print(f"[main] Regime: {result['regime']}（廣度={result['breadth_pct']}%, 波動率={result['vix_value']}%[{result['vix_source']}]）")
     print(f"[main] Universe {result['universe_count']} → L1 {result['l1_passed_count']} → L2 候選 {result['candidate_count']}")
     print(f"[main] 已寫入 {OUTPUT_PATH}")
 
