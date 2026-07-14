@@ -34,11 +34,21 @@ OUTPUT_PATH = Path(__file__).parent / "data" / "candidates.json"
 
 
 def run(no_cache: bool = False) -> dict:
-    print("[main] Step 1: Universe")
-    symbols, sector_map = universe.fetch_universe()
+    print("[main] Step 1: Universe shortlist（當日成交金額排序）")
+    shortlist_symbols, shortlist_sector_map, directory = universe.fetch_shortlist()
+    prev_roster = universe.load_roster()
 
-    print("[main] Step 2: 抓取日 K 數據")
-    fetch_symbols = symbols + [market.BENCHMARK_TICKER]
+    # 前次名單存活股即使今天不在 shortlist 內也要納入下載，
+    # 否則遲滯判斷會因為根本沒有新數據，被迫誤判為「跌出名單」（見 universe.py 模組說明）
+    download_symbols = sorted(set(shortlist_symbols) | set(prev_roster))
+
+    sector_map = dict(shortlist_sector_map)
+    for sym in prev_roster:
+        if sym not in sector_map:
+            sector_map[sym] = universe.sector_for(sym, directory)
+
+    print(f"[main] Step 2: 抓取日 K 數據（shortlist {len(shortlist_symbols)} 支 ∪ 前次名單 {len(prev_roster)} 支 = {len(download_symbols)} 支）")
+    fetch_symbols = download_symbols + [market.BENCHMARK_TICKER]
 
     price_data = None if no_cache else fetcher.load_price_cache()
     if price_data is None:
@@ -50,8 +60,17 @@ def run(no_cache: bool = False) -> dict:
     if market.BENCHMARK_TICKER not in price_data:
         print(f"[main] 警告：{market.BENCHMARK_TICKER} 下載失敗，Regime/RS fallback 將受影響")
 
+    print("[main] Step 2.3: 30 日均成交金額重排 + 名單遲滯")
+    ranked = universe.rank_by_30d_avg_trade_value(download_symbols, price_data)
+    symbols = universe.apply_roster_hysteresis(ranked, prev_roster)
+    sector_map = {s: sector_map.get(s, "Unknown") for s in symbols}
+    print(f"[main] 最終名單：{len(symbols)} 支（目標 {universe.TARGET_COUNT}，遲滯帶上限 {universe.HYSTERESIS_BAND}）")
+
     print("[main] Step 2.5: 簡化 Regime 判定")
-    regime, breadth_pct, hv20, hv_ok = market.fetch_regime_quick(price_data)
+    breadth_input = {s: price_data[s] for s in symbols if s in price_data}
+    if market.BENCHMARK_TICKER in price_data:
+        breadth_input[market.BENCHMARK_TICKER] = price_data[market.BENCHMARK_TICKER]
+    regime, breadth_pct, hv20, hv_ok = market.fetch_regime_quick(breadth_input)
 
     print("[main] Step 3: 抓取基本面資訊")
     info_data = None if no_cache else fetcher.load_info_cache()
@@ -69,6 +88,7 @@ def run(no_cache: bool = False) -> dict:
     candidates = scorer.score_all(l1_passed, price_data, regime=regime, sector_map=sector_map)
 
     market_date = str(price_data[market.BENCHMARK_TICKER].index[-1].date()) if market.BENCHMARK_TICKER in price_data else str(date.today())
+    universe.save_roster(symbols, market_date)
 
     result = {
         "market_date": market_date,

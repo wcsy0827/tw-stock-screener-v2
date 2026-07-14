@@ -3,8 +3,12 @@
 MVP 已知限制（見 README「未解決的設計問題」）：
 - 台股沒有現成的前瞻隱含波動率指數（VIX 等價物），改用 ^TWII 20日已實現波動率（HV20，
   年化）替代。HV 是落後指標（用過去報酬率算），VIX 是前瞻指標，語意不同。
-- 下方 HV_LOW_THRESHOLD / HV_HIGH_THRESHOLD 是暫定值，尚未用 ^TWII 歷史 HV20 分布
-  校準分位數，僅用於接通五象限架構、觀察候選池分數分布，不代表最終門檻。
+
+HV_LOW_THRESHOLD / HV_HIGH_THRESHOLD 校準方式（見 scripts/calibrate_hv.py）：
+不照抄美股 VIX 20/25 的絕對數值，而是對齊「Regime 出現頻率」——美股版 VIX<20 大約
+覆蓋七成交易日、VIX>=25 大約一成，取 ^TWII HV20 歷史分布的第 70 / 90 百分位。
+校準窗：2021-07-14 ~ 2026-07-14（5年，1194 個 HV20 樣本）。若要重新校準，直接重跑
+scripts/calibrate_hv.py 並更新下方數值＋此註解的日期窗。
 """
 
 from __future__ import annotations
@@ -16,9 +20,9 @@ import yfinance as yf
 BENCHMARK_TICKER = "^TWII"
 BREADTH_SMOOTHING_DAYS = 3
 
-# 暫定值，未校準（見上方模組說明）
-HV_LOW_THRESHOLD = 15.0
-HV_HIGH_THRESHOLD = 25.0
+# 已校準（見上方模組說明），非美股 VIX 數值移植
+HV_LOW_THRESHOLD = 19.44   # P70
+HV_HIGH_THRESHOLD = 27.49  # P90
 
 _BREADTH_EXCLUDED: frozenset[str] = frozenset({BENCHMARK_TICKER})
 
@@ -94,16 +98,16 @@ def fetch_twii_hv20(all_stocks_data: dict | None = None) -> tuple[float, bool]:
     return round(hv20, 2), True
 
 
-# ── 五象限 Regime 判定（VIX → HV20 替代，邊界暫定）───────────────
+# ── 五象限 Regime 判定（VIX → HV20 替代，邊界已校準見模組說明）──────
 
 def determine_market_regime(breadth_pct: float, hv20: float) -> dict:
     """
-    五象限分類矩陣（架構對稱美股版，邊界值為暫定，見模組說明）：
-      breadth >= 60% + HV20 < 15          → BULL_TREND
-      breadth 35~60% + HV20 < 15          → CONSOLIDATION
-      breadth 35~60% + HV20 >= 15         → CONSOLIDATION_VOLATILE
-      breadth < 35% + HV20 >= 25          → PANIC_REVERSAL
-      breadth < 35% + HV20 < 25           → BEAR_DISTRIBUTION
+    五象限分類矩陣（架構對稱美股版，HV20 邊界已用歷史分布校準，見模組說明）：
+      breadth >= 60% + HV20 < HV_LOW_THRESHOLD   → BULL_TREND
+      breadth 35~60% + HV20 < HV_LOW_THRESHOLD   → CONSOLIDATION
+      breadth 35~60% + HV20 >= HV_LOW_THRESHOLD  → CONSOLIDATION_VOLATILE
+      breadth < 35% + HV20 >= HV_HIGH_THRESHOLD  → PANIC_REVERSAL
+      breadth < 35% + HV20 < HV_HIGH_THRESHOLD   → BEAR_DISTRIBUTION
     """
     if breadth_pct >= 60 and hv20 < HV_LOW_THRESHOLD:
         return {"regime": "BULL_TREND", "primary_strategy": "動能策略"}

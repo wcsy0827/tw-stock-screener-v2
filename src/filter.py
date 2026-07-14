@@ -1,8 +1,11 @@
 """L1 硬條件篩選：排除不符合基本流動性/規模要求的股票。
 
-門檻為新台幣量級的暫定值（見 README「未解決的設計問題」），尚未用台股實際
-分布校準，先用寬鬆值觀察通過數量分布，再視情況收斂，不能直接套用美股版的
-USD 門檻數字。
+門檻校準方式（見 scripts/calibrate_l1.py）：universe 本身已是「30日均成交金額」
+排序前 150~180 名，MIN_DAILY_TRADE_VALUE / MIN_MARKET_CAP 在這個池子裡近乎冗餘，
+只作安全網用——設在略低於名單自身 P5 分位數的位置，正常不該刷掉太多支，只防
+極端/資料異常個股。校準當下（2026-07-13 名單）P5 = 30日均額NT$1,308M／市值
+NT$201.8億，故取整設為下方數值。MAX_ATR_PCT=8% 是有意義的風控上限（P70=7.83%
+< 8% < P90=9.25%，實際會刷掉約 2 成），不是安全網，維持不變。
 """
 
 from __future__ import annotations
@@ -12,9 +15,9 @@ import os
 import pandas as pd
 
 
-MIN_PRICE = float(os.getenv("MIN_PRICE", "10"))                       # 新台幣
-MIN_DAILY_TRADE_VALUE = float(os.getenv("MIN_DAILY_TRADE_VALUE", "50000000"))  # NT$50M/日（暫定）
-MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "3000000000"))      # NT$30億（暫定）
+MIN_PRICE = float(os.getenv("MIN_PRICE", "10"))                              # 新台幣
+MIN_DAILY_TRADE_VALUE = float(os.getenv("MIN_DAILY_TRADE_VALUE", "1000000000"))  # NT$10億/日（安全網，見上方校準說明）
+MIN_MARKET_CAP = float(os.getenv("MIN_MARKET_CAP", "15000000000"))           # NT$150億（安全網，見上方校準說明）
 MIN_TRADING_DAYS = 5
 MAX_ATR_PCT = float(os.getenv("MAX_ATR_PCT", "8"))
 
