@@ -1,0 +1,6 @@
+.venv/
+.cache/
+.env
+__pycache__/
+*.pyc
+data/candidates.json
