@@ -3,5 +3,10 @@
     "market_date": "2026-07-14",
     "vix_value": 36.57,
     "vix_source": "taifex"
+  },
+  {
+    "market_date": "2026-07-15",
+    "vix_value": 36.61,
+    "vix_source": "taifex"
   }
 ]

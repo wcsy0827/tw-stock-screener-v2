@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import disposition
 import fetcher
 import filter as filter_
 import market
@@ -101,10 +102,14 @@ def run(no_cache: bool = False) -> dict:
         info_data = fetcher.fetch_info(symbols)
         fetcher.save_info_cache(info_data)
 
+    print("[main] Step 3.5: 處置股/分盤集合競價排除名單")
+    excluded_symbols = disposition.fetch_excluded_symbols()
+
     print("[main] Step 4: L1 流動性篩選")
     l1_passed = filter_.apply_filters(
         {s: price_data[s] for s in symbols if s in price_data},
         info_data,
+        excluded_symbols=excluded_symbols,
     )
 
     print("[main] Step 5: L2 技術評分")

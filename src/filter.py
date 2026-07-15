@@ -48,21 +48,29 @@ def _atr_pct(df: pd.DataFrame, length: int = 14) -> float | None:
 def apply_filters(
     price_data: dict[str, pd.DataFrame],
     info_data: dict[str, dict],
+    excluded_symbols: dict[str, str] | None = None,
 ) -> list[str]:
     """
     輸入全市場數據，輸出通過 L1 篩選的股票代號列表。
 
     篩選條件：
+    - 不在 excluded_symbols 中（處置股/分盤集合競價等交易限制，見 disposition.py；
+      預設 None 視為空字典，向後相容不傳此參數的呼叫端）
     - 最新收盤價 > MIN_PRICE
     - 近 30 日平均日成交金額 > MIN_DAILY_TRADE_VALUE（股數 × 收盤價）
     - 市值 > MIN_MARKET_CAP；市值 None（API 缺失）視同不足直接排除
     - 近 5 日有交易（至少 5 筆有效數據）
     - ATR14/收盤價百分比 <= MAX_ATR_PCT；歷史數據不足 15 筆無法計算時不排除
     """
+    excluded_symbols = excluded_symbols or {}
     passed: list[str] = []
     reasons: dict[str, str] = {}
 
     for sym, df in price_data.items():
+        if sym in excluded_symbols:
+            reasons[sym] = excluded_symbols[sym]
+            continue
+
         if len(df) < MIN_TRADING_DAYS:
             reasons[sym] = f"數據不足({len(df)}筆)"
             continue

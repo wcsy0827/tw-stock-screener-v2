@@ -50,8 +50,16 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
         未被 main.py 呼叫）——等 `ranker.py`（L3 AI 精選）產出 `new_ranked`
         所需的 confidence/buy_zone 等欄位後再一併接線，此時也要在呼叫前加上
         `tracker.is_safe_to_run()` guard（P6）。
-- [ ] 處置股/全額交割股排除（TWSE 處置公告或代理指標，補進 L1）——設計文件
-      R11 已記錄「排除機制落地前」的殘餘風險，建議與 ranker/main.py 接線順序一併確認
+- [x] **處置股/全額交割股排除**：見 `src/disposition.py` + `tests/test_disposition.py`
+      + `tests/test_filter.py`（26 個測試）。處置股用 TWSE OpenAPI
+      `/v1/announcement/punish`（含處置起迄時間，過期自動解除排除，不需維護
+      到期清單）；全額交割股 TWSE OpenAPI 未提供獨立現況清單（查過全部 143 個
+      endpoint 確認），改用 `/v1/exchangeReport/TWT85U`「分盤集合競價」欄位作
+      代理指標（更嚴重的交易限制，設計 R11 原文即容許「處置公告或代理指標」）。
+      已接進 `filter.apply_filters()` 的 `excluded_symbols` 參數並在 main.py
+      Step 3.5 呼叫，`python main.py --dry-run` 端到端跑過確認：2303.TW（聯電，
+      NT$166 收盤、30日均額 NT$355億，L1 正常會通過）因處於處置期間被正確排除
+      ——非僅單元測試通過，已用當下真實 TWSE 處置名單驗證。
 - [ ] 移植 `ranker.py`（L3 DeepSeek AI 精選）
 - [ ] 移植 `publisher.py`（報告發布）
 - [ ] 視情況引入 `specs/`/`plans/` 規格治理（DD 編號系統）——等真正開始做 ranker 才需要
