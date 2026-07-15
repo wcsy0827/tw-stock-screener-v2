@@ -66,10 +66,11 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻），供未來重
    無法獨立校準分位數，暫時沿用 `^TWII` HV20 的校準值。累積 6~12 個月
    `data/taifex_vix_history.json` 後需要重新校準（TODO.md 已記錄）。
 
-2. **漲跌停止損模擬失真**：台股 ±10% 漲跌停鎖死時掛單不會成交，若直接移植美股版
-   tracker.py 的「`today_low ≤ stop_loss` 即視為止損成交」邏輯，會系統性低估虧損、
-   污染績效資料。**開始做 tracker 追蹤、累積 performance_history 之前，必須先設計
-   跌停無量判定機制**（設計草案見 TODO.md Phase 3），否則後續要砍掉重練。
+2. **漲跌停止損模擬失真（設計已完成）**：台股 ±10% 漲跌停鎖死時掛單不會成交，
+   若直接移植美股版 tracker.py 的「`today_low ≤ stop_loss` 即視為止損成交」邏輯，
+   會系統性低估虧損、污染績效資料。完整設計已定稿於
+   [docs/phase3_limit_lock_design.md](docs/phase3_limit_lock_design.md)（v10，
+   經 11 輪 skeptic/red-team/simplifier 抗辯審查），尚待依此設計移植 `tracker.py`。
 
 3. **Universe 範圍為近似，非官方指數成分股**：TWSE OpenAPI 沒有「台灣50/中型100
    成分股」endpoint（那是 FTSE 方法論下的 0050/0051 ETF 成分股）。目前用 30 日均
@@ -88,8 +89,8 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻），供未來重
 `--no-cache` 強制重新下載 price/info（不影響 `universe_roster.json`／
 `taifex_vix_history.json`）。
 
-## 後續階段（尚未開始，見 TODO.md）
+## 後續階段（見 TODO.md）
 
-Phase 3：漲跌停止損機制設計（需先抗辯審查）→ tracker 移植 → L3 AI 精選（DeepSeek）
-→ 報告發布。本階段刻意不建立 `specs/`/`plans/` 規格治理，待 Phase 3 真正開始做
-tracker/ranker 再視需要引入。
+Phase 3：漲跌停止損機制設計（[已定稿](docs/phase3_limit_lock_design.md)）→
+tracker 移植（下一步）→ L3 AI 精選（DeepSeek）→ 報告發布。本階段刻意不建立
+`specs/`/`plans/` 規格治理，待真正開始做 tracker/ranker 再視需要引入。

@@ -21,19 +21,26 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
 - [ ] 若長期觀察 `vix_source` 經常是 `hv20_fallback`（而非 `taifex`），代表 TAIFEX
       抓取端可能不穩定，需要回頭排查 `taifex_vix.py` 的 URL/解析邏輯是否過期。
 
-## Phase 3（未開始，需要先抗辯審查再動手）
+## Phase 3（設計已完成並通過抗辯審查，尚未實作）
 
 **開始前提：Phase 2 的 universe/regime/L1 校準要先站穩，因為 tracker 會開始累積
 `performance_history`，一旦地基（規則）设计错了，历史绩效数据要砍掉重练。**
 
-- [ ] **漲跌停止損模擬機制設計**（最高優先度，見上次對話的建議方案）：
-  - 鎖死判定：`today_low == today_close == 跌停價（前收×0.9，依tick取整）` 且量能顯著低於均量
-  - 結算規則：鎖死當日不結算，部位標記 `pending_exit`，順延到第一個非鎖死交易日以該日收盤價出場
-  - 進場側：訊號後遇漲停鎖死，限價單視為未成交，watch 天數照常消耗
-  - **動手前必須跑一次 adversarial-review（skeptic/red-team/simplifier）**，因為這個設計直接決定
-    `performance_history.json` 的可信度
-- [ ] 處置股/全額交割股排除（TWSE 處置公告或代理指標，補進 L1）
-- [ ] 移植 `tracker.py`（訊號追蹤、績效歸檔）——依賴上面的漲跌停機制先落地
+- [x] **漲跌停止損模擬機制設計**：完整設計見
+      [docs/phase3_limit_lock_design.md](docs/phase3_limit_lock_design.md)（v10 定稿）。
+      經過 11 輪 skeptic/red-team/simplifier 三鏡頭抗辯（累積修出 5 個 blocker、
+      約 15 個 major，完整修正對照見文件附錄 A），連續兩輪收工確認皆為零
+      blocker/major，符合 loop-until-dry 收工條件。核心機制：鎖死判定用
+      「收盤=最低+量能枯竭」三條件合取（不依賴精確 ±10% 比值，因 yfinance
+      配息缺漏會使比值失真）、pending_exit 旗標（非新 status 值）、鎖死順延
+      至解除日以開盤價出場、進場側一字漲停 gate。
+- [ ] **依 docs/phase3_limit_lock_design.md 移植 tracker.py**（訊號追蹤、績效歸檔）：
+  - §6 實作範圍清單為施工檢查表，含 `is_limit_down_locked`/`is_one_price_limit_up`
+    純函式、`_check_settlement` 改寫、主迴圈新鮮度守衛、§5.1 gate 的 `status==
+    "watch"` 前提、§9 Q1 的拆股 fixture 強制驗證
+  - `scripts/calibrate_lock.py` 校準 `LOCK_VOLUME_RATIO`（跌停/漲停側分別）
+- [ ] 處置股/全額交割股排除（TWSE 處置公告或代理指標，補進 L1）——設計文件
+      R11 已記錄「排除機制落地前」的殘餘風險，建議與 tracker.py 移植順序一併確認
 - [ ] 移植 `ranker.py`（L3 DeepSeek AI 精選）
 - [ ] 移植 `publisher.py`（報告發布）
 - [ ] 視情況引入 `specs/`/`plans/` 規格治理（DD 編號系統）——等真正開始做 tracker 才需要
