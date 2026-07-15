@@ -34,16 +34,27 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
       「收盤=最低+量能枯竭」三條件合取（不依賴精確 ±10% 比值，因 yfinance
       配息缺漏會使比值失真）、pending_exit 旗標（非新 status 值）、鎖死順延
       至解除日以開盤價出場、進場側一字漲停 gate。
-- [ ] **依 docs/phase3_limit_lock_design.md 移植 tracker.py**（訊號追蹤、績效歸檔）：
-  - §6 實作範圍清單為施工檢查表，含 `is_limit_down_locked`/`is_one_price_limit_up`
-    純函式、`_check_settlement` 改寫、主迴圈新鮮度守衛、§5.1 gate 的 `status==
-    "watch"` 前提、§9 Q1 的拆股 fixture 強制驗證
-  - `scripts/calibrate_lock.py` 校準 `LOCK_VOLUME_RATIO`（跌停/漲停側分別）
+- [x] **依 docs/phase3_limit_lock_design.md 移植 tracker.py**（訊號追蹤、績效歸檔）：
+      見 `src/tracker.py` + `tests/test_tracker.py`（41 個測試，含 §6 施工檢查表
+      要求的 `is_limit_down_locked`/`is_one_price_limit_up` 純函式 fixture、
+      `_check_settlement` 的 defer/hold_pending/exit 三態改寫、主迴圈新鮮度守衛、
+      §5.1 gate 的 `status=="watch"` 前提、§9 Q1 拆股 fixture）。關鍵測試已用
+      fault-injection 驗證真的會抓到對應 bug（§5.1 blocker 重現、Q1 標尺混用
+      重現），非僅通過即信。`is_safe_to_run()` 提供 P6 運行前提 guard（僅排除
+      週末，未排除法定假日，供未來排程整合時呼叫）。
+  - [ ] **待辦**：`scripts/calibrate_lock.py` 已寫好但尚未實際執行（需完整
+        universe 3 年歷史下載，成本高，留待正式上線前跑），`LOCK_VOLUME_RATIO=0.3`
+        仍是暫定值，目前跌停/漲停側共用同一常數（腳本會分別報告兩側分布，
+        若谷底明顯不同再拆成兩個常數）。
+  - [ ] main.py 尚未接上 tracker（`run_tracker()` 仍是獨立可呼叫的模組函式，
+        未被 main.py 呼叫）——等 `ranker.py`（L3 AI 精選）產出 `new_ranked`
+        所需的 confidence/buy_zone 等欄位後再一併接線，此時也要在呼叫前加上
+        `tracker.is_safe_to_run()` guard（P6）。
 - [ ] 處置股/全額交割股排除（TWSE 處置公告或代理指標，補進 L1）——設計文件
-      R11 已記錄「排除機制落地前」的殘餘風險，建議與 tracker.py 移植順序一併確認
+      R11 已記錄「排除機制落地前」的殘餘風險，建議與 ranker/main.py 接線順序一併確認
 - [ ] 移植 `ranker.py`（L3 DeepSeek AI 精選）
 - [ ] 移植 `publisher.py`（報告發布）
-- [ ] 視情況引入 `specs/`/`plans/` 規格治理（DD 編號系統）——等真正開始做 tracker 才需要
+- [ ] 視情況引入 `specs/`/`plans/` 規格治理（DD 編號系統）——等真正開始做 ranker 才需要
 
 ## 尚未排入階段的觀察項
 
