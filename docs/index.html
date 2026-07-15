@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台股 AI 選股系統</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.page-header .date-line { font-size: 1rem; color: var(--muted); margin-bottom: 12px; }
+.scan-bar { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--new); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scan-bar .arrow { color: var(--border); }
+.scan-bar strong { color: var(--text); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 2px; }
+
+/* Tracking rows */
+.track-item { background: var(--card); border-radius: 8px; padding: 11px 14px; margin-bottom: 7px; border-left: 3px solid var(--expired); display: grid; gap: 2px; }
+.track-item.active  { border-left-color: var(--active); }
+.track-item.watch   { border-left-color: var(--watch); }
+.track-item.invalid { border-left-color: var(--invalid); }
+.track-item.expired { border-left-color: var(--expired); opacity: 0.6; }
+.track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-symbol { font-weight: 700; font-size: 0.95rem; }
+.track-name { color: var(--muted); font-size: 0.85rem; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--text); margin-left: auto; white-space: nowrap; }
+.track-status { font-size: 0.82rem; color: var(--muted); }
+.track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
+.track-prices .cur-price { color: var(--text); font-weight: 600; }
+
+/* Stock cards */
+.stock-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+.stock-card:hover { border-color: var(--new); }
+.stock-card.reset-card:hover { border-color: var(--reset); }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-rank { background: var(--border); color: var(--muted); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.card-title { flex: 1; }
+.card-symbol { font-size: 1.1rem; font-weight: 800; color: var(--new); }
+.reset-card .card-symbol { color: var(--reset); }
+.card-company { font-size: 0.88rem; color: var(--muted); }
+.card-price { text-align: right; }
+.card-price .price-val { font-size: 1rem; font-weight: 700; display: block; }
+.card-price .price-chg { font-size: 0.8rem; }
+.price-chg.up   { color: var(--active); }
+.price-chg.down { color: var(--invalid); }
+.price-chg.flat { color: var(--muted); }
+.card-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 0.73rem; padding: 2px 8px; border-radius: 4px; background: var(--border); color: var(--muted); }
+.reason-box { font-size: 0.875rem; line-height: 1.55; color: var(--text); padding: 10px 12px; background: #0f172a; border-radius: 7px; margin-bottom: 10px; }
+.trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.trade-cell { background: #0f172a; border-radius: 7px; padding: 8px 10px; }
+.trade-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.trade-val { font-size: 0.9rem; font-weight: 700; }
+.trade-val.buy  { color: var(--new); }
+.trade-val.tgt  { color: var(--active); }
+.trade-val.stop { color: var(--invalid); }
+.risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
+
+/* Summary footer */
+.summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
+.summary-box h2 { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-group { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-size: 1.1rem; font-weight: 800; }
+.stat-num.c-active  { color: var(--active); }
+.stat-num.c-watch   { color: var(--watch); }
+.stat-num.c-invalid { color: var(--invalid); }
+.stat-num.c-new     { color: var(--new); }
+.stat-num.c-reset   { color: var(--reset); }
+.stat-num.c-removed { color: var(--expired); }
+.stat-lbl { font-size: 0.8rem; color: var(--muted); }
+
+/* Index page */
+.index-hero { text-align: center; padding: 32px 0 20px; }
+.index-hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+.index-hero p { color: var(--muted); font-size: 0.9rem; }
+.report-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.report-entry { background: var(--card); border-radius: 9px; padding: 14px 18px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; }
+.report-entry:hover { border-color: var(--new); text-decoration: none; color: var(--text); }
+.report-date { font-weight: 700; font-size: 0.95rem; min-width: 130px; }
+.report-weekday { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.report-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.chip { font-size: 0.75rem; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+.chip.active  { background: rgba(34,197,94,0.15);  color: var(--active); }
+.chip.watch   { background: rgba(234,179,8,0.15);  color: var(--watch); }
+.chip.invalid { background: rgba(239,68,68,0.12);  color: var(--invalid); }
+.chip.new     { background: rgba(59,130,246,0.15); color: var(--new); }
+.chip.reset   { background: rgba(168,85,247,0.12); color: var(--reset); }
+.chip.neutral { background: var(--border); color: var(--muted); }
+.arrow-icon { color: var(--border); font-size: 1rem; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
+
+@media (max-width: 600px) {
+  .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .card-header { flex-wrap: wrap; }
+  .card-price { text-align: left; }
+  .report-entry { flex-wrap: wrap; }
+  .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="index-hero">
+    <h1>📈 台股 AI 選股系統</h1>
+    <p>每日選股報告 · 訊號追蹤 · 台灣50＋中型100近似範圍</p>
+    <p class="tz-note" id="index-freshness"></p>
+    <p class="tz-note" id="index-lastrun" style="font-size:0.75rem;"></p>
+  </div>
+<script>
+(function() {
+  document.addEventListener('DOMContentLoaded', function() {
+  var lr = document.getElementById('index-lastrun');
+  if (lr) {
+    fetch('data/last_run.json?_=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.run_at_utc) return;
+        var dt = new Date(d.run_at_utc);
+        var twStr = dt.toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false,
+          year:'numeric', month:'2-digit', day:'2-digit',
+          hour:'2-digit', minute:'2-digit'});
+        lr.textContent = '上次執行：' + twStr + '（台灣時間）· 資料截止 ' + (d.market_date || '—');
+      })
+      .catch(function() {});
+  }
+
+  var list = document.getElementById('report-list');
+  if (list) {
+    fetch('data/reports-index.json?_=' + Date.now())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data.length) {
+          list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+          return;
+        }
+        data.sort(function(a, b) { return b.date.localeCompare(a.date); });
+        var html = '';
+        data.forEach(function(entry) {
+          var chips = '';
+          if (entry.active)  chips += '<span class="chip active">'  + entry.active  + ' 有效</span>';
+          if (entry.watch)   chips += '<span class="chip watch">'   + entry.watch   + ' 留意</span>';
+          if (entry.invalid) chips += '<span class="chip invalid">' + entry.invalid + ' 失效</span>';
+          if (entry.new)     chips += '<span class="chip new">'     + entry.new     + ' 新增</span>';
+          if (entry.reset)   chips += '<span class="chip reset">'   + entry.reset   + ' 重置</span>';
+          if (!chips) chips = '<span class="chip neutral">無追蹤</span>';
+          html += '<a class="report-entry" href="reports/' + entry.date + '.html">' +
+            '<div><div class="report-date">' + entry.date + '</div>' +
+            '<div class="report-weekday">（' + (entry.weekday || '') + '）</div></div>' +
+            '<div class="report-chips">' + chips + '</div>' +
+            '<span class="arrow-icon">›</span></a>';
+        });
+        list.innerHTML = html;
+      })
+      .catch(function() {
+        list.innerHTML = '<div class="empty-state">尚無報告，請先執行選股系統</div>';
+      });
+  }
+  });
+})();
+</script>
+  
+<details open>
+<summary>📖 系統說明</summary>
+<div class="info-grid">
+
+  <div class="info-card">
+    <h3>📡 篩選流程</h3>
+    <div class="pipe-flow">
+      <div class="pipe-step"><span class="pipe-badge">L0</span>台灣50＋中型100近似範圍（依30日均成交金額排序＋名單遲滯，約150～180支）</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L1</span>硬條件篩選：股價 &gt; NT$10、30日均成交金額 &gt; NT$10億、市值 &gt; NT$150億、ATR14/收盤價 ≤ 8%（波動風控）；另排除目前處於 TWSE 處置公告期間或分盤集合競價的股票</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L2</span>技術評分100分制，門檻60分；高波動整理環境（見右側）提高至65分，恐慌超跌環境降至40分；門檻篩選後再依總分排名取前55名</div>
+      <div class="pipe-arrow">↓</div>
+      <div class="pipe-step"><span class="pipe-badge">L3</span>DeepSeek AI 依當日大盤環境（Regime）的主推策略精選，最多3支；輸入矩陣含ATR標準化動能（Momentum_ATR）、個股波動單位（ATR14）、量能推進因子（VTF_Score）、60日Beta（對照加權指數^TWII）；並疊加基本面維度（估值Fwd_PE、獲利品質Profit_Margin、成長性Rev_Growth_YoY）與空頭比例輔助取捨；陰跌熊市環境下全面防禦，不輸出任何建議（詳見右側Regime表）</div>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>🌐 大盤環境（Market Regime）</h3>
+    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">市場廣度 = universe 中收盤價高於50日SMA的股票比例；波動率優先取TAIFEX臺指選擇權波動率指數（真VIX），抓取失敗時退化為^TWII 20日已實現波動率（HV20）</p>
+    <table class="info-table">
+      <tr><th>環境名稱</th><th>判斷條件</th><th>主推策略</th><th>L2 門檻</th></tr>
+      <tr><td style="color:var(--active)">📈 牛市趨勢</td><td>廣度 ≥ 60% 且波動率 &lt; 19.4</td><td>動能策略</td><td>60 分</td></tr>
+      <tr><td style="color:var(--watch)">⚖️ 震盪整理</td><td>廣度 35～60% 且波動率 &lt; 19.4</td><td>突破策略（積極）</td><td>60 分</td></tr>
+      <tr><td style="color:#f59e0b">⚡ 高波動整理</td><td>廣度 35～60% 且波動率 ≥ 19.4</td><td>突破策略（保守）</td><td><strong>65 分</strong></td></tr>
+      <tr><td style="color:#f97316">🔥 恐慌超跌</td><td>廣度 &lt; 35% 且波動率 ≥ 27.5</td><td>反轉策略</td><td>40 分</td></tr>
+      <tr><td style="color:var(--invalid)">🐻 陰跌熊市</td><td>廣度 &lt; 35% 且波動率 &lt; 27.5</td><td>⛔ 全面防禦</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>📊 L2 技術評分（100 分制）</h3>
+    <table class="info-table">
+      <tr><th>指標</th><th>滿分</th><th>評分說明</th></tr>
+      <tr><td>MA 多頭排列</td><td>20</td><td>EMA5&gt;10&gt;20&gt;50，每條件 +6.67 分</td></tr>
+      <tr><td>RSI 健康區間</td><td>18</td><td>50～70 滿分；40～50 或 70～80 半分；其餘 0（牛市趨勢下 50～80 均為滿分）</td></tr>
+      <tr><td>MACD 柱狀體</td><td>17</td><td>正且遞增滿分；正遞減半分；負 0</td></tr>
+      <tr><td>量能放大（含趨勢）</td><td>15</td><td>VTF 基礎分（量比 × K_pos 阻斷） × 5 日量能趨勢係數</td></tr>
+      <tr><td>多週期動能</td><td>15</td><td>20 日 ATR 倍數主趨勢 × 5 日方向確認</td></tr>
+      <tr><td>相對強度 RS</td><td>15</td><td>個股 5 日報酬率 − 同產業 equal-weight 籃子 5 日報酬率（台股無對應美股 sector ETF 體系，改用同產業個股自建籃子，樣本 &lt; 3 支 fallback 為大盤加權指數）</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>🎯 買進區間與停損停利如何設定</h3>
+    <p style="font-size:0.72rem;color:var(--muted);margin-bottom:8px">買入區間、目標價與初始止損由 AI 在訊號日依策略規則輸出並鎖定；目標價是停利觸發線。進場後止損改由系統動態管理（見下表），跟單請以每日報告顯示的止損為準</p>
+    <table class="info-table">
+      <tr><th>策略</th><th>買入區間</th><th>初始止損</th></tr>
+      <tr><td>動能</td><td>收盤價下方 0.25～1×ATR14 淺回檔帶（下緣不低於 EMA10）；若已量縮回檔至 EMA20～EMA10 帶則直接採用該區間</td><td>買入區間下緣再下方 1×ATR14（回檔帶情境改用 EMA20 下方 2%，取較高者；不得寬於進場價 −10%）</td></tr>
+      <tr><td>突破</td><td>優先設在回測確認帶（20 日高點～+2%），次選突破緩衝帶（20 日高點上方 +0.5%～+1.5%）；距 20 日高點超過 +3% 視為追高</td><td>20 日高點下方 2%</td></tr>
+      <tr><td>反轉</td><td>EMA50 ±3% 支撐帶，須同時滿足底背離確認（Stoch_K &lt; 25 且 RSI 高於 5 日前）且收盤已明顯高於 20 日低點</td><td>20 日低點下方 2%（不得高於 EMA50）</td></tr>
+    </table>
+    <table class="info-table" style="margin-top:8px">
+      <tr><th>進場後動態風控</th><th>規則（系統自動執行）</th></tr>
+      <tr><td>🎯 停利</td><td>當日最高價觸及目標價即停利出場（出場價 = 目標價）</td></tr>
+      <tr><td>🛑 停損</td><td>當日最低價觸及有效止損即停損出場（出場價 = 止損價）；同日雙觸發（黑天鵝）保守判為停損</td></tr>
+      <tr><td>🔻 跌停鎖死順延</td><td>觸停損當日若判定為跌停鎖死（賣單無法成交），順延至解除日以開盤價出場，不記樂觀的止損價；無量陰跌至跌停鎖死當日則以收盤價（跌停價）出場</td></tr>
+      <tr><td>🔒 保本鎖定</td><td>收盤浮盈達目標距離 50% 時，止損自動上移至買入區間上緣，報告標註「🔒保本」</td></tr>
+      <tr><td>📈 移動停利</td><td>動能/突破策略峰值浮盈超過 10% 後，收盤自峰值回撤 5% 即鎖利出場（出場價 = 收盤價；反轉策略不適用）</td></tr>
+      <tr><td>⏰ 到期出場</td><td>持倉達 AI 設定的持有天數仍未觸發上述條件，以收盤價強制出場</td></tr>
+    </table>
+  </div>
+
+  <div class="info-card">
+    <h3>🚦 訊號追蹤狀態</h3>
+    <table class="info-table">
+      <tr><td>✅ active</td><td>當日最低價已觸及買入區間上緣（模擬限價單成交），且在前一日報告「明日掛單計畫」的建議掛單名單內，顯示持倉天數與彩色浮損益</td></tr>
+      <tr><td>⏳ 跌停鎖死排隊中</td><td>已觸停損但當日判定為跌停鎖死（賣單無法成交），暫不結算，順延至解除日以開盤價出場；持續超過 15 個交易日仍無新鮮資料（疑似停牌/下市）則強制以最後已知價結算</td></tr>
+      <tr><td>🟡 watch</td><td>今日未觸及買入區間等待回落；或已觸價但未在掛單名單（持倉已滿或優先序不足），暫不進場</td></tr>
+      <tr><td>❌ invalid</td><td>趨勢轉弱或跌破止損，訊號失效（僅發生在今日未觸價成交的 watch 階段）</td></tr>
+      <tr><td>🗑 expired</td><td>觀察達策略對應上限自動移除（突破/動能 5 日、反轉 10 日；高波動整理市的突破 3 日、恐慌超跌尖底的反轉 5 日）</td></tr>
+      <tr><td>📦 settled</td><td>停利／停損／移動停利／到期／跌停鎖死結算，歸檔績效資料庫</td></tr>
+    </table>
+  </div>
+
+</div>
+</details>
+
+  <div class="report-section-title">📋 歷史報告</div>
+  <div class="report-list" id="report-list"></div>
+</div>
+</body>
+</html>

@@ -562,6 +562,7 @@ def _apply_exit(
     entry["_settled"]     = True
     entry["_exit_reason"] = exit_reason
     entry["_exit_price"]  = exit_price
+    entry["_exit_note"]   = exit_note  # 供 publisher.py 區分漲跌停鎖死相關出場與一般出場
     settled_entries.append(entry)
 
 

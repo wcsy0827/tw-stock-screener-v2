@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-台股選股系統 MVP — Phase 1（Universe → 抓資料 → 簡化 Regime → L2 技術評分）
-
-只跑通資料管線與候選池分數分布驗證，不接 L3 AI 精選、不做 tracker 追蹤、不發布報告。
+台股選股系統 — 主程式入口。
 
 Usage:
   python main.py --dry-run
   python main.py --dry-run --no-cache
+  python main.py                    # 正式執行：完整跑完 L0~L3 + tracker + 發布報告並 push
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -27,7 +27,10 @@ import disposition
 import fetcher
 import filter as filter_
 import market
+import publisher
+import ranker
 import scorer
+import tracker
 import universe
 
 
@@ -57,7 +60,12 @@ def _record_vix_history(market_date: str, vol_value: float, vix_source: str) -> 
     print(f"[main] 波動率歷史已記錄：{market_date} = {vol_value}%（{vix_source}），累積 {len(history)} 筆")
 
 
-def run(no_cache: bool = False) -> dict:
+def run(
+    no_cache: bool = False,
+    min_score: float = 60.0,
+    top_n: int = 3,
+    use_ai_cache: bool = True,
+) -> dict:
     print("[main] Step 1: Universe shortlist（當日成交金額排序）")
     shortlist_symbols, shortlist_sector_map, directory = universe.fetch_shortlist()
     prev_roster = universe.load_roster()
@@ -85,8 +93,8 @@ def run(no_cache: bool = False) -> dict:
         print(f"[main] 警告：{market.BENCHMARK_TICKER} 下載失敗，Regime/RS fallback 將受影響")
 
     print("[main] Step 2.3: 30 日均成交金額重排 + 名單遲滯")
-    ranked = universe.rank_by_30d_avg_trade_value(download_symbols, price_data)
-    symbols = universe.apply_roster_hysteresis(ranked, prev_roster)
+    ranked_symbols = universe.rank_by_30d_avg_trade_value(download_symbols, price_data)
+    symbols = universe.apply_roster_hysteresis(ranked_symbols, prev_roster)
     sector_map = {s: sector_map.get(s, "Unknown") for s in symbols}
     print(f"[main] 最終名單：{len(symbols)} 支（目標 {universe.TARGET_COUNT}，遲滯帶上限 {universe.HYSTERESIS_BAND}）")
 
@@ -113,13 +121,13 @@ def run(no_cache: bool = False) -> dict:
     )
 
     print("[main] Step 5: L2 技術評分")
-    candidates = scorer.score_all(l1_passed, price_data, regime=regime, sector_map=sector_map)
+    candidates = scorer.score_all(l1_passed, price_data, min_score=min_score, regime=regime, sector_map=sector_map)
 
     market_date = str(price_data[market.BENCHMARK_TICKER].index[-1].date()) if market.BENCHMARK_TICKER in price_data else str(date.today())
     universe.save_roster(symbols, market_date)
     _record_vix_history(market_date, vol_value, vix_source)
 
-    result = {
+    result: dict = {
         "market_date": market_date,
         "regime": regime,
         "breadth_pct": breadth_pct,
@@ -130,30 +138,118 @@ def run(no_cache: bool = False) -> dict:
         "candidate_count": len(candidates),
         "candidates": candidates,
     }
+
+    if not candidates:
+        print("[main] 無候選股，跳過 L3/tracker/發布")
+        result["ranked"] = []
+        result["market_context"] = {}
+        return result
+
+    print("[main] Step 5.5: 組裝大盤背景（供 L3 Prompt 與報告儀表板）")
+    candidate_sectors = {c["sector"] for c in candidates if c.get("sector") and c["sector"] != "Unknown"}
+    market_context = market.fetch_market_context(
+        all_stocks_data=price_data,
+        sector_map=sector_map,
+        candidate_sectors=candidate_sectors,
+        breadth_pct=breadth_pct,
+        vol_value=vol_value,
+        vix_source=vix_source,
+    )
+    result["market_context"] = market_context
+
+    print("[main] Step 6: L3 AI 精選")
+    ranked_out = ranker.rank_candidates(
+        candidates, price_data, info_data,
+        top_n=top_n, market_context=market_context,
+        market_date=market_date, use_ai_cache=use_ai_cache,
+        sector_map=sector_map,
+    )
+    result["ranked"] = ranked_out
+    print(f"[main] L3 精選完成，{len(ranked_out)} 支買入候選")
+
     return result
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="台股選股系統 MVP")
-    parser.add_argument("--dry-run", action="store_true", help="輸出候選池 JSON，不做其他動作")
-    parser.add_argument("--no-cache", action="store_true", help="忽略快取，強制重新下載")
+    parser = argparse.ArgumentParser(description="台股選股系統")
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="輸出候選池 JSON 並在本機生成 HTML 報告，但不 push 至 GitHub",
+    )
+    parser.add_argument("--no-cache", action="store_true", help="忽略快取，強制重新下載（同時略過 AI 快取）")
+    parser.add_argument(
+        "--no-ai-cache", action="store_true",
+        help="忽略 AI 快取，強制重新呼叫 DeepSeek（price/info 快取仍複用）",
+    )
+    parser.add_argument(
+        "--top", type=int, default=int(os.getenv("MAX_OUTPUT", "3")), metavar="N",
+        help="L3 輸出幾支候選股（預設 3）",
+    )
+    parser.add_argument(
+        "--min-score", type=float, default=float(os.getenv("MIN_SCORE", "60")), metavar="N",
+        help="L2 最低評分門檻（預設 60）",
+    )
+    parser.add_argument("--yes", action="store_true", help="跳過今日重複執行確認（CI 環境用）")
     args = parser.parse_args()
 
-    result = run(no_cache=args.no_cache)
+    if tracker.check_already_run_today() and not args.yes:
+        print("\n⚠️  今日已執行過追蹤，再次執行不會增加追蹤天數。")
+        try:
+            confirm = input("是否繼續？(y/N) ").strip().lower()
+        except EOFError:
+            confirm = "n"
+        if confirm != "y":
+            print("已取消。")
+            sys.exit(0)
+
+    result = run(
+        no_cache=args.no_cache,
+        min_score=args.min_score,
+        top_n=args.top,
+        use_ai_cache=not args.no_cache and not args.no_ai_cache,
+    )
 
     OUTPUT_PATH.parent.mkdir(exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+        json.dump(
+            {k: v for k, v in result.items() if k not in ("ranked", "market_context")},
+            f, ensure_ascii=False, indent=2,
+        )
 
     print(f"\n[main] === 結果摘要（{result['market_date']}）===")
     print(f"[main] Regime: {result['regime']}（廣度={result['breadth_pct']}%, 波動率={result['vix_value']}%[{result['vix_source']}]）")
-    print(f"[main] Universe {result['universe_count']} → L1 {result['l1_passed_count']} → L2 候選 {result['candidate_count']}")
+    print(f"[main] Universe {result['universe_count']} → L1 {result['l1_passed_count']} → L2 候選 {result['candidate_count']} → L3 精選 {len(result.get('ranked', []))}")
     print(f"[main] 已寫入 {OUTPUT_PATH}")
 
     if result["candidates"]:
         print("\n[main] 分數分布（Top 10）：")
         for c in result["candidates"][:10]:
             print(f"  {c['symbol']:>10} {c['total_score']:>6.1f}分  ({c['sector']})")
+
+    ranked = result.get("ranked", [])
+    market_context = result.get("market_context", {})
+    market_date_str = result.get("market_date")
+
+    # Phase 3 P6 guard：tracker 的結算是不可逆歸檔動作，僅在收盤後且交易日執行；
+    # 非安全時段仍完整輸出上方 L0~L3 結果，只跳過 tracker/發布這一段（見
+    # docs/phase3_limit_lock_design.md P6、tracker.is_safe_to_run()）。
+    if not tracker.is_safe_to_run():
+        print("\n[main] ⚠️  目前非收盤後/非交易日，跳過 tracker 追蹤與報告發布"
+              "（避免用殘缺/重複 bar 做漲跌停判定並不可逆歸檔）")
+        return
+
+    _, categories = tracker.run_tracker(ranked, market_context=market_context, market_date=market_date_str)
+
+    market_date_dt = datetime.strptime(market_date_str, "%Y-%m-%d") if market_date_str else datetime.utcnow()
+    stats = {
+        "total":    result.get("universe_count", 0),
+        "l1_count": result.get("l1_passed_count", 0),
+        "l2_count": result.get("candidate_count", 0),
+        # fallback（AI 排序失敗時的 L2 分數退化輸出）不算真正的 AI 精選
+        "ai_count": sum(1 for r in ranked if not r.get("is_fallback")),
+        "date":     market_date_dt,
+    }
+    publisher.publish(categories, stats, dry_run=args.dry_run, market_context=market_context)
 
 
 if __name__ == "__main__":

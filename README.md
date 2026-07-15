@@ -1,11 +1,15 @@
-# 台股選股系統 MVP（Phase 1 + Phase 2 + Phase 2.5）
+# 台股選股系統
 
-移植自 `D:\us-stock-screener`（美股 S&P 500 選股系統）的三層篩選架構，範圍縮到
-「台灣50＋中型100」近似範圍（依 30 日均成交金額排序、加名單遲滯，約 150~180 支），
-驗證資料管線與 L2 分數分布是否合理。**本階段不接 L3 AI 精選、不做 tracker 追蹤、
-不發布報告。**
+移植自 `D:\us-stock-screener`（美股 S&P 500 選股系統）的三層篩選架構＋訊號追蹤＋
+報告發布全流程，範圍縮到「台灣50＋中型100」近似範圍（依 30 日均成交金額排序、
+加名單遲滯，約 150~180 支）。
 
-跨 session 的待辦清單見 [TODO.md](TODO.md)（Phase 3）。
+流程：Universe → L1 流動性篩選（含處置股/分盤集合競價排除）→ L2 技術評分 →
+L3 DeepSeek AI 精選 → tracker 訊號追蹤與漲跌停止損模擬 → HTML 報告發布。
+未設定 `DEEPSEEK_API_KEY` 時 L3 自動 fallback 為 L2 分數排序（`is_fallback=True`，
+不納入 tracker 追蹤）。
+
+跨 session 的待辦清單見 [TODO.md](TODO.md)。
 
 ## 執行
 
@@ -13,10 +17,13 @@
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+cp .env.example .env   # 填入 DEEPSEEK_API_KEY 才會啟用 L3 AI 精選
 python main.py --dry-run
 ```
 
-輸出候選池 JSON 至 `data/candidates.json`，並在終端機印出分數分布 Top 10。
+`--dry-run` 會完整跑完 L0~L3、tracker 追蹤（僅收盤後/交易日）、HTML 報告生成，
+但略過 git push。輸出候選池 JSON 至 `data/candidates.json`，報告見
+`docs/reports/<market_date>.html`（可直接用瀏覽器開啟）。
 
 詳細人工驗證步驟見 [MANUAL_TESTING.md](MANUAL_TESTING.md)。
 
@@ -29,13 +36,22 @@ universe.py    TWSE OpenAPI 抓上市公司清單 + ISIN頁面產業中文名稱
 fetcher.py     yfinance 批次下載日K+info，快取邏輯移植自美股版
                  （時區改 Asia/Taipei 13:30 收盤 + 15分鐘 buffer）
 taifex_vix.py  抓取 TAIFEX 臺指選擇權波動率指數（真 VIX 等價物）最新值
-market.py      Regime 判定：優先用真 VIX（taifex_vix.py），失敗 fallback 為
-                 ^TWII HV20（20日已實現波動率），邊界值已用歷史分布校準
+market.py      Regime 判定 + fetch_market_context()（供 L3 Prompt 與報告儀表板的
+                 大盤/產業籃子背景）：優先用真 VIX（taifex_vix.py），失敗 fallback
+                 為 ^TWII HV20（20日已實現波動率），邊界值已用歷史分布校準
                  （scripts/calibrate_hv.py）
+disposition.py 排除目前處於 TWSE 處置公告期間或分盤集合競價的股票（補進 L1）
 filter.py      L1 流動性硬篩，門檻已用實際分布校準（scripts/calibrate_l1.py）
 scorer.py      六維度 L2 評分移植，RS 維度改用同產業 equal-weight 籃子替代 sector ETF
-main.py        兩段式串起以上模組，--dry-run 輸出候選池，累積波動率訊號歷史
-scripts/       一次性校準腳本（HV20 邊界、L1 門檻），供未來重新校準時重跑
+ranker.py      L3 DeepSeek AI 精選：RS_vs_Sector/Beta_60D 複用同產業籃子與 ^TWII，
+                 未設定 DEEPSEEK_API_KEY 時 fallback 為 L2 分數排序
+tracker.py     訊號追蹤與績效歸檔，含台股漲跌停止損模擬機制（見
+                 docs/phase3_limit_lock_design.md）：跌停鎖死時止損單順延至解除日
+                 開盤價出場，避免把連續跌停誤記為一般停損
+publisher.py   生成每日 HTML 報告 + 首頁索引，dry-run 略過 git push
+main.py        串起以上全部模組，--dry-run 輸出候選池 JSON + 本機 HTML 報告
+scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死量能比），供未來
+                 重新校準時重跑
 ```
 
 ## 已校準/已接上項目（Phase 2 + Phase 2.5）
@@ -60,21 +76,27 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻），供未來重
 - **產業別顯示名稱**：改用 TWSE ISIN 頁面（`isin.twse.com.tw`）解析出的中文產業
   名稱（如「半導體業」），取代 `t187ap03_L` 回傳的兩位數代碼。
 
-## 未解決的設計問題（下一階段前必須處理，詳見 TODO.md）
+## 未解決的設計問題（詳見 TODO.md）
 
 1. **VIX 邊界校準仍是暫定值**：真 VIX 已接上（見上方），但因歷史尚淺（約4個月）
    無法獨立校準分位數，暫時沿用 `^TWII` HV20 的校準值。累積 6~12 個月
    `data/taifex_vix_history.json` 後需要重新校準（TODO.md 已記錄）。
 
-2. **漲跌停止損模擬失真（設計已完成）**：台股 ±10% 漲跌停鎖死時掛單不會成交，
-   若直接移植美股版 tracker.py 的「`today_low ≤ stop_loss` 即視為止損成交」邏輯，
-   會系統性低估虧損、污染績效資料。完整設計已定稿於
-   [docs/phase3_limit_lock_design.md](docs/phase3_limit_lock_design.md)（v10，
-   經 11 輪 skeptic/red-team/simplifier 抗辯審查），尚待依此設計移植 `tracker.py`。
+2. **`LOCK_VOLUME_RATIO`（漲跌停鎖死量能枯竭門檻）仍是暫定值 0.3**：
+   `scripts/calibrate_lock.py` 已寫好但尚未實際執行（需完整 universe 3 年歷史
+   下載，成本高），正式上線前應跑過校準。
 
-3. **Universe 範圍為近似，非官方指數成分股**：TWSE OpenAPI 沒有「台灣50/中型100
+3. **Earnings_Days_Left 維度未移植**：L3 AI Prompt 移植時刻意省略財報剩餘天數
+   維度——TWSE 未接入財報日曆資料源，維持恆定值的欄位對 AI 判斷無資訊量，
+   待未來有資料源再補上。
+
+4. **Universe 範圍為近似，非官方指數成分股**：TWSE OpenAPI 沒有「台灣50/中型100
    成分股」endpoint（那是 FTSE 方法論下的 0050/0051 ETF 成分股）。目前用 30 日均
    成交金額排序近似，且僅涵蓋 TWSE 上市（`.TW`），未涵蓋 TPEx 上櫃（`.TWO`）。
+
+5. **GitHub 遠端尚未設定**：`publisher.publish()` 每次執行都會生成本機 HTML 報告，
+   但因 `git remote` 為空會優雅略過 push（印出設定指引）。正式上線前需
+   `git remote add origin ...`。
 
 ## 快取與持久化檔案
 
@@ -82,15 +104,19 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻），供未來重
 |------|------|--------|
 | `.cache/price_YYYYMMDD.pkl` | 日K數據快取 | 當日 |
 | `.cache/info_YYYYMMDD.json` | 基本面快取 | 7日內取最新一份 |
+| `.cache/ranked_YYYYMMDD.json` | L3 AI 排序結果快取（同日重跑不重打 API） | 當日 |
 | `data/universe_roster.json` | 名單遲滯用的前次名單 | 永久（每次執行覆寫） |
 | `data/taifex_vix_history.json` | 波動率訊號歷史（供未來重新校準） | 永久（只增不改，同日重跑覆寫當天那筆） |
-| `data/candidates.json` | 候選池輸出 | 每次執行覆寫 |
+| `data/watchlist.json` | tracker 訊號追蹤現況（含 pending_exit 漲跌停排隊狀態） | 永久（每次執行覆寫） |
+| `data/performance_history.json` | 已結算訊號績效歸檔 | 永久（只增不改，原子寫入） |
+| `data/candidates.json`（gitignored） | L2 候選池除錯輸出 | 每次執行覆寫 |
+| `docs/reports/<date>.html`、`docs/index.html`、`docs/data/*.json` | 每日報告與首頁索引 | 永久累積 |
 
 `--no-cache` 強制重新下載 price/info（不影響 `universe_roster.json`／
-`taifex_vix_history.json`）。
+`taifex_vix_history.json`）；`--no-ai-cache` 只略過 L3 AI 快取。
 
 ## 後續階段（見 TODO.md）
 
-Phase 3：漲跌停止損機制設計（[已定稿](docs/phase3_limit_lock_design.md)）→
-tracker 移植（下一步）→ L3 AI 精選（DeepSeek）→ 報告發布。本階段刻意不建立
-`specs/`/`plans/` 規格治理，待真正開始做 tracker/ranker 再視需要引入。
+處置股/全額交割股排除、tracker（含漲跌停止損模擬）、L3 AI 精選（DeepSeek）、
+報告發布皆已完成並串通。剩餘：`LOCK_VOLUME_RATIO` 校準執行、GitHub 遠端/Actions
+排程、TPEx 上櫃納入 universe。
