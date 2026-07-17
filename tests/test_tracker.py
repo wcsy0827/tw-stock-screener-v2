@@ -28,7 +28,7 @@ class TestIsLimitDownLocked:
     def test_intraday_reopened_not_thin_volume(self):
         # 已知邊界：收盤=最低、比值在帶內，但當日量能不枯竭（盤中曾打開又鎖死）
         # → 判「未鎖死」，照常結算（設計 §3.1「已知邊界」段）
-        bar = {"close": 90.0, "low": 90.0, "volume": 5000}
+        bar = {"close": 90.0, "low": 90.0, "volume": 7000}
         assert tracker.is_limit_down_locked(bar, prev_close=100.0, vol_ma20=10000.0) is False
 
     def test_normal_decline_not_locked(self):
@@ -67,7 +67,7 @@ class TestIsLimitDownLocked:
 
     def test_volume_ratio_boundary_inclusive(self):
         # volume == LOCK_VOLUME_RATIO * vol_ma20 剛好等於門檻 → 仍視為枯竭（<=）
-        bar = {"close": 90.0, "low": 90.0, "volume": 3000.0}
+        bar = {"close": 90.0, "low": 90.0, "volume": 6000.0}
         assert tracker.is_limit_down_locked(bar, prev_close=100.0, vol_ma20=10000.0) is True
 
 
@@ -541,12 +541,12 @@ class TestPendingSplitFactorScaleImmunity:
             return {
                 "1234.TW": {
                     # close(90)=low(90)、prev_close(100) 落在 D1/D2 帶內，因此本輪「鎖死與否」
-                    # 完全由 D3（量能）決定：volume=4000 相對未縮放 baseline(8000) 判定
-                    # 「未鎖死」（4000 > 0.3*8000=2400）；若程式碼誤把 volume 乘上
-                    # split_factor(0.5) → 2000 <= 2400 會誤判「鎖死」而錯誤地 hold_pending，
+                    # 完全由 D3（量能）決定：volume=6000 相對未縮放 baseline(8000) 判定
+                    # 「未鎖死」（6000 > 0.6*8000=4800）；若程式碼誤把 volume 乘上
+                    # split_factor(0.5) → 3000 <= 4800 會誤判「鎖死」而錯誤地 hold_pending，
                     # 本測試專挑這個會讓兩種結果分岔的數值窗口來抓這個 bug
                     "price": 90.0, "today_high": 92.0, "today_low": 90.0,
-                    "open": 91.0, "prev_close": 100.0, "volume": 4000.0,
+                    "open": 91.0, "prev_close": 100.0, "volume": 6000.0,
                     "vol_ma20": 2000.0,
                     "bar_date": "2026-01-20",
                     "ema20": 95.0, "ema50": 90.0,
@@ -557,7 +557,7 @@ class TestPendingSplitFactorScaleImmunity:
 
         watchlist, categories = tracker.run_tracker([], market_date="2026-01-20")
 
-        # 用未縮放的 volume(4000) 對比未縮放的 baseline(8000)：4000 > 0.3*8000=2400 → 未鎖死 → 解除結算
+        # 用未縮放的 volume(6000) 對比未縮放的 baseline(8000)：6000 > 0.6*8000=4800 → 未鎖死 → 解除結算
         assert watchlist == []
         assert len(categories["settled"]) == 1
         assert categories["settled"][0]["_exit_price"] == 91.0

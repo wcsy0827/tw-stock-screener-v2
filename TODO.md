@@ -42,10 +42,18 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
       fault-injection 驗證真的會抓到對應 bug（§5.1 blocker 重現、Q1 標尺混用
       重現），非僅通過即信。`is_safe_to_run()` 提供 P6 運行前提 guard（僅排除
       週末，未排除法定假日，供未來排程整合時呼叫）。
-  - [ ] **待辦**：`scripts/calibrate_lock.py` 已寫好但尚未實際執行（需完整
-        universe 3 年歷史下載，成本高，留待正式上線前跑），`LOCK_VOLUME_RATIO=0.3`
-        仍是暫定值，目前跌停/漲停側共用同一常數（腳本會分別報告兩側分布，
-        若谷底明顯不同再拆成兩個常數）。
+  - [x] **`LOCK_VOLUME_RATIO` 已校準：0.3 → 0.6**（2026-07，universe 150 支
+        × 3 年歷史）。原「雙峰谷底」校準假設證偽後，改用**一字切分定錨**：
+        一字跌停 bar（全日僅跌停價成交，n=222）= 確定真鎖死 ground truth，
+        其量能比分布定錨門檻。0.3 只涵蓋 69.4% 真鎖死，漏掉的走樂觀結算
+        （記當日跌停價而非解鎖日開盤，平均 +5pp 樂觀）違反設計第一原則；
+        0.6 涵蓋 89.6%（剔除 2025-04 崩盤集中樣本後 93.9%），且已實證誤鎖
+        代價近中性、pending 不會卡死（解鎖天數中位 1 日不受門檻影響）。
+        經四輪三鏡頭抗辯定案（含推翻中間版本 0.75=單一崩盤事件過擬合），
+        完整推理鏈與監控基線見 docs/phase3_limit_lock_design.md §3.1 補述
+        與附錄 B。測試 fixture 已同步（fail-then-pass：2 failed → 全套 125
+        passed）。殘餘追蹤項：下游績效分析須用 `exit_deferred` 欄位分群；
+        實際運行若 `locked_days` 頻繁 >3 或 thin_fill 佔比異常，重跑校準。
 - [x] **處置股/全額交割股排除**：見 `src/disposition.py` + `tests/test_disposition.py`
       + `tests/test_filter.py`（26 個測試）。處置股用 TWSE OpenAPI
       `/v1/announcement/punish`（含處置起迄時間，過期自動解除排除，不需維護

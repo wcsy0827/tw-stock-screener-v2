@@ -82,9 +82,12 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死
    無法獨立校準分位數，暫時沿用 `^TWII` HV20 的校準值。累積 6~12 個月
    `data/taifex_vix_history.json` 後需要重新校準（TODO.md 已記錄）。
 
-2. **`LOCK_VOLUME_RATIO`（漲跌停鎖死量能枯竭門檻）仍是暫定值 0.3**：
-   `scripts/calibrate_lock.py` 已寫好但尚未實際執行（需完整 universe 3 年歷史
-   下載，成本高），正式上線前應跑過校準。
+2. **`LOCK_VOLUME_RATIO`（漲跌停鎖死量能枯竭門檻）已校準為 0.6**（2026-07，
+   一字跌停真鎖死群定錨法；原「雙峰谷底」假設實測證偽後修正方法論）。已知
+   殘餘限制：定錨樣本 85% 集中於 2025-04 崩盤事件、存活者偏差（鎖死至下市股
+   不在樣本）、漲停側 U3 沿用跌停側定錨值僅取保守方向；下游績效分析須用
+   `exit_deferred` 欄位分群校正順延出場偏差。詳見
+   [docs/phase3_limit_lock_design.md](docs/phase3_limit_lock_design.md) §3.1 與附錄 B。
 
 3. **Earnings_Days_Left 維度未移植**：L3 AI Prompt 移植時刻意省略財報剩餘天數
    維度——TWSE 未接入財報日曆資料源，維持恆定值的欄位對 AI 判斷無資訊量，
@@ -118,5 +121,5 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死
 ## 後續階段（見 TODO.md）
 
 處置股/全額交割股排除、tracker（含漲跌停止損模擬）、L3 AI 精選（DeepSeek）、
-報告發布皆已完成並串通。剩餘：`LOCK_VOLUME_RATIO` 校準執行、GitHub 遠端/Actions
-排程、TPEx 上櫃納入 universe。
+報告發布皆已完成並串通。`LOCK_VOLUME_RATIO` 已校準為 0.6（詳見上方「未解決
+的設計問題」第 2 項）。剩餘：GitHub 遠端/Actions 排程、TPEx 上櫃納入 universe。

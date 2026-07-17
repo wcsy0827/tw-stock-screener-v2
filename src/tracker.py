@@ -43,7 +43,14 @@ TRAILING_ACTIVATION_PCT    = 0.10   # 峰值浮盈需超過 10% 才啟動移動�
 TRAILING_RETRACE_PCT       = 0.05   # 從峰值收盤回撤 5% 觸發出場
 
 # ── 漲跌停鎖死判定常數（Phase 3，見 docs/phase3_limit_lock_design.md §3）──
-LOCK_VOLUME_RATIO = 0.3   # 暫定值，上線前須跑 scripts/calibrate_lock.py 校準（§3.1 R2）
+LOCK_VOLUME_RATIO = 0.6   # 已校準（2026-07，universe 150 支 × 3 年日線）。定錨方法：一字跌停
+                          # bar（全日僅跌停價成交 = 確定真鎖死，n=222）的量能比分布，非原方案
+                          # 的「雙峰谷底」（實測無雙峰，該假設已證偽）。0.6 為 0.55~0.65 可辯護
+                          # 區間內的判斷值：涵蓋 89.6% 真鎖死（剔除 2025-04 崩盤集中樣本後
+                          # 93.9%），涵蓋率對帶內選點不敏感；>0.6 尾端半數隔日即解鎖（主力跌停
+                          # 接貨），不值得為涵蓋它們擴大誤鎖面。本值定錨自跌停側，U3（漲停側）
+                          # 沿用僅取其保守方向（多攔幽靈進場），非漲停側獨立校準值。
+                          # 詳見 docs/phase3_limit_lock_design.md §3.1 補述與附錄 B。
 PENDING_STALE_LIMIT = 15  # 連續無新鮮資料達此門檻 → 強制結算（§4.5）
 
 MARKET_CLOSE_HOUR = 13

@@ -181,8 +181,9 @@ python main.py --dry-run
 
 - 真 VIX（TAIFEX）已接上，但邊界值因歷史尚淺暫時沿用 HV20 校準值，兩者量級可比
   但不完全等價
-- `LOCK_VOLUME_RATIO`（漲跌停鎖死量能枯竭門檻）仍是暫定值 0.3，`scripts/calibrate_lock.py`
-  尚未實際執行
+- `LOCK_VOLUME_RATIO`（漲跌停鎖死量能枯竭門檻）已校準為 0.6（一字跌停真鎖死群
+  定錨），殘餘限制（樣本集中單一崩盤事件、存活者偏差等）見
+  docs/phase3_limit_lock_design.md §3.1 補述與附錄 B
 - L3 AI Prompt 沒有財報剩餘天數（Earnings_Days_Left）維度，TWSE 未接入財報日曆資料源
 - Universe 是流動性近似範圍，不是官方 0050/0051 成分股
 - 目前只涵蓋 TWSE 上市（`.TW`），不含 TPEx 上櫃（`.TWO`）
