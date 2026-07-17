@@ -249,7 +249,7 @@ def _fetch_latest(symbols: list[str]) -> dict[str, dict]:
     result: dict[str, dict] = {}
     for sym in symbols:
         df = _get_df(sym)
-        if df.empty:
+        if df.empty or "Close" not in df.columns:
             continue
         close = df["Close"].dropna()
         if close.empty:

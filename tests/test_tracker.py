@@ -563,6 +563,33 @@ class TestPendingSplitFactorScaleImmunity:
         assert categories["settled"][0]["_exit_price"] == 91.0
 
 
+# ── _fetch_latest（yfinance 批次下載，防禦性欄位缺失處理）────────────
+
+class TestFetchLatestMissingColumns:
+    def test_missing_close_column_skips_symbol_not_crashes(self, monkeypatch):
+        """yfinance 對個別股票的批次下載可能因暫時性 API 異常回傳不完整欄位
+        （例如缺 Close，但 Open/High/Low/Volume 仍在）。_fetch_latest 對
+        High/Low/Open/Volume 皆有「欄位不存在→fallback」防禦，但先前 Close
+        是直接 df["Close"] 硬讀，缺欄位時整支 KeyError 炸掉 main.py（見
+        2026-07-17 實際運行踩雷）。應優雅跳過該股票，其餘股票正常回傳。"""
+        idx = pd.date_range("2026-06-01", periods=5, freq="D")
+        cols = pd.MultiIndex.from_tuples([
+            ("GOOD.TW", "Open"), ("GOOD.TW", "High"), ("GOOD.TW", "Low"),
+            ("GOOD.TW", "Close"), ("GOOD.TW", "Volume"),
+            ("BAD.TW", "Open"), ("BAD.TW", "High"), ("BAD.TW", "Low"),
+            ("BAD.TW", "Volume"),  # 缺 Close
+        ])
+        data = [[10, 11, 9, 10.5, 1000, 20, 21, 19, 2000]] * 5
+        fake_df = pd.DataFrame(data, index=idx, columns=cols)
+        monkeypatch.setattr(tracker.yf, "download", lambda **kw: fake_df)
+
+        result = tracker._fetch_latest(["GOOD.TW", "BAD.TW"])
+
+        assert "GOOD.TW" in result
+        assert result["GOOD.TW"]["price"] == 10.5
+        assert "BAD.TW" not in result
+
+
 # ── save_watchlist 原子寫入 ───────────────────────────────────────────
 
 def test_save_watchlist_atomic_write_leaves_no_tmp_file(tmp_path, monkeypatch):
