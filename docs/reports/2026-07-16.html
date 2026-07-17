@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>台股 AI 選股 2026-07-15</title>
+<title>台股 AI 選股 2026-07-16</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -184,21 +184,21 @@ details[open] summary::before { transform: rotate(90deg); }
     <h1>📊 台股 AI 選股報告</h1>
     <div class="date-meta">
       <span class="date-label">台股資料截止日</span>
-      <span class="date-val">📅 2026-07-15（三）</span>
+      <span class="date-val">📅 2026-07-16（四）</span>
       <span class="freshness-badge" id="freshness-badge" onclick="toggleRunInfo()" title="點擊查看資料來源詳情"></span>
     </div>
     <div class="run-info" id="run-info">載入中…</div>
     <div class="scan-bar">
       掃描 <strong>候選池 150支</strong>
       <span class="arrow">→</span> L1 <strong>122支</strong>
-      <span class="arrow">→</span> L2 <strong>18支</strong>
-      <span class="arrow">→</span> AI精選 <strong>2支</strong>
+      <span class="arrow">→</span> L2 <strong>16支</strong>
+      <span class="arrow">→</span> AI精選 <strong>3支</strong>
     </div>
     <a class="back-link" href="../index.html">← 返回首頁</a>
   </div>
 <script>
 (function() {
-  var d = '2026-07-15';
+  var d = '2026-07-16';
   var parts = d.split('-');
   var reportDay = Date.UTC(+parts[0], +parts[1]-1, +parts[2]);
   var now = new Date();
@@ -256,11 +256,11 @@ function toggleRunInfo() {
   <div class="regime-metrics">
     <div class="regime-metric">
       <div class="regime-metric-label">市場廣度</div>
-      <div class="regime-metric-val">53.8%</div>
+      <div class="regime-metric-val">50.4%</div>
     </div>
     <div class="regime-metric">
       <div class="regime-metric-label">波動率</div>
-      <div class="regime-metric-val">36.6</div>
+      <div class="regime-metric-val">34.5</div>
       <div class="regime-metric-sub">高度恐慌（避險情緒濃厚）（真VIX）</div>
     </div>
     <div class="regime-metric">
@@ -271,160 +271,270 @@ function toggleRunInfo() {
 </div>
 
   
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 1 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">0.0%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num c-invalid">-2.24%</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">1</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  <div class="stat-row"><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">0.0%</span><span class="stat-lbl">突破策略勝率</span></div></div>
+</div>
 
   
 <div class="section">
   <div class="section-title">
-    🟡 留意清單<span class="section-count">（2支）</span>
+    ✅ 有效追蹤清單<span class="section-count">（1支，上限 5 支）</span>
   </div>
   
-<div class="track-item watch">
-  <div class="track-header">
-    <span class="track-symbol">1303.TW</span>
-    <span class="track-name">NAN YA PLASTIC</span>
-    <span class="strategy-tag">突破策略</span>
-  </div>
-  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
-  <div class="track-prices">買入區間 NT$224～NT$228｜目標 NT$250｜止損 NT$218｜信心 8/10｜L2 91 分</div>
-</div>
-
-<div class="track-item watch">
+<div class="track-item active">
   <div class="track-header">
     <span class="track-symbol">1301.TW</span>
     <span class="track-name">FORMOSA PLASTIC</span>
     <span class="strategy-tag">突破策略</span>
   </div>
-  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
-  <div class="track-prices">買入區間 NT$64.5～NT$65.5｜目標 NT$72｜止損 NT$63｜信心 6/10｜L2 100 分</div>
+  <div class="track-status">持倉 1 / 10 天 ✅ ｜ <span class="c-active" style="font-weight:700">+0.15%</span></div>
+  <div class="track-prices"><span class="cur-price">NT$65.60</span>｜進場 NT$65.50｜目標 NT$72｜止損 NT$63.00</div>
 </div>
 </div>
 <div class="section">
   <div class="section-title">
-    🆕 今日新進觀察名單<span class="section-count">（2支）</span>
+    🟡 留意清單<span class="section-count">（3支）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">8150.TW</span>
+    <span class="track-name">CHIPMOS TECHNOLOGIES INC</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$122.5～NT$125｜目標 NT$140｜止損 NT$120｜信心 8/10｜L2 100 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">8028.TW</span>
+    <span class="track-name">PHOENIX SILICON INTERNATIONAL C</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$340～NT$350｜目標 NT$400｜止損 NT$330｜信心 7/10｜L2 92 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">5871.TW</span>
+    <span class="track-name">CHAILEASE HOLDING COMPANY LIMIT</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 4 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$118～NT$120.5｜目標 NT$135｜止損 NT$115｜信心 6/10｜L2 85 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    📦 今日結算<span class="section-count">（1支）</span>
+  </div>
+  
+<div class="track-item" style="border-left-color:#a855f7">
+  <div class="track-header">
+    <span class="track-symbol">1303.TW</span>
+    <span class="track-name">NAN YA PLASTIC</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status"><span class="c-invalid">🛑 觸發止損，停損出場</span></div>
+  <div class="track-prices"><span class="c-invalid" style="font-weight:700">-2.24%</span>　進場 NT$223.00 → 出場 NT$218.00，持倉 1 天</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（3支）</span>
   </div>
   
 <div class="stock-card ">
   <div class="card-header">
     <div class="card-rank">1</div>
     <div class="card-title">
-      <div class="card-symbol">1303.TW</div>
-      <div class="card-company">NAN YA PLASTIC</div>
+      <div class="card-symbol">8150.TW</div>
+      <div class="card-company">CHIPMOS TECHNOLOGIES INC</div>
     </div>
     <div class="card-price">
-      <span class="price-val">NT$227.50</span>
-      <span class="price-chg up">▲8.33%</span>
+      <span class="price-val">NT$122.50</span>
+      <span class="price-chg up">▲7.46%</span>
     </div>
   </div>
   <div class="card-badges">
-    <span class="badge">📊 評分 91</span>
+    <span class="badge">📊 評分 100</span>
     <span class="badge">信心 8/10</span>
-    <span class="badge">🏭 塑膠工業</span>
+    <span class="badge">🏭 半導體業</span>
     <span class="badge">📋 突破策略</span>
   </div>
-  <div class="reason-box">🤖 塑膠工業近期強勢，5日漲21%，20日漲51%，產業趨勢強勁。1303為產業龍頭，Profit_Margin 7%且營收成長4.6%，Fwd_PE 20.6合理。技術面量價結構健康，VTF_Score 1.5且MACD正遞增，符合保守突破條件。</div>
-  <div class="detail-box">📋 策略依據：VTF_Score=1.5，MACD POS_INC，RSI=78略高但仍在50~65區間外，惟產業強勢且量能充足（Vol_vs_20DAvg=2.08），採保守突破。</div>
+  <div class="reason-box">🤖 半導體產業近5日雖下跌3.2%，但個股RS_vs_Sector高達+8.2%，展現產業內領頭羊地位。基本面營收年增25.4%、淨利率3.3%穩健，Fwd_PE 22.7倍相對合理。短線量價結構健康，符合保守突破策略。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.58、MACD POS_INC、RSI=61.3，符合保守突破條件；距20日高點125元僅2%，量能確認(Vol_vs_20DAvg=2.67)。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">NT$224～NT$228</div>
+      <div class="trade-val buy">NT$122.5～NT$125</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">NT$250</div>
+      <div class="trade-val tgt">NT$140</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">NT$218</div>
+      <div class="trade-val stop">NT$120</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
       <div class="trade-val">10</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ RSI 78接近過熱，短線可能回調；塑膠股波動大，需嚴守止損。</div>
-  <div class="detail-box">💡 信心評分依據：產業趨勢強勁，基本面穩健，技術面符合突破條件，但RSI偏高扣分。</div>
+  <div class="risk-box">⚠️ 半導體產業近期偏弱，若產業持續下探可能拖累個股；Short_Float_Pct數據缺失，軋空風險不明。</div>
+  <div class="detail-box">💡 信心評分依據：技術面訊號明確且基本面穩健，但產業籃子偏弱扣分，故給8分。</div>
 </div>
 
 <div class="stock-card ">
   <div class="card-header">
     <div class="card-rank">2</div>
     <div class="card-title">
-      <div class="card-symbol">1301.TW</div>
-      <div class="card-company">FORMOSA PLASTIC</div>
+      <div class="card-symbol">8028.TW</div>
+      <div class="card-company">PHOENIX SILICON INTERNATIONAL C</div>
     </div>
     <div class="card-price">
-      <span class="price-val">NT$65.70</span>
-      <span class="price-chg up">▲3.30%</span>
+      <span class="price-val">NT$350.00</span>
+      <span class="price-chg up">▲9.89%</span>
     </div>
   </div>
   <div class="card-badges">
-    <span class="badge">📊 評分 100</span>
-    <span class="badge">信心 6/10</span>
-    <span class="badge">🏭 塑膠工業</span>
-    <span class="badge">📋 突破策略</span>
+    <span class="badge">📊 評分 92</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 半導體業</span>
+    <span class="badge">📋 動能策略</span>
   </div>
-  <div class="reason-box">🤖 同屬強勢塑膠工業，產業5日漲21%提供支撐。1301 Profit_Margin為負（-4%），營收衰退11%，基本面較弱，但技術面VTF_Score 1.38且MACD正遞增，RSI 67.7健康，符合保守突破條件。</div>
-  <div class="detail-box">📋 策略依據：VTF_Score=1.38，MACD POS_INC，RSI=67.7在50~65區間外但接近，Vol_vs_20DAvg=1.9，採保守突破。</div>
+  <div class="reason-box">🤖 半導體業領頭羊，RS_vs_Sector高達+15.6%，營收年增20.4%且淨利率17.2%優異。Fwd_PE 49.6倍雖偏高，但高成長性可支撐。技術面量價結構強勁，惟股價距20日高點較遠，屬動能延續型。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列、RSI=62.7、VTF=2.47、Momentum_ATR=1.74，動能強勁但未達突破條件。</div>
   <div class="trade-grid">
     <div class="trade-cell">
       <div class="trade-label">買入區間</div>
-      <div class="trade-val buy">NT$64.5～NT$65.5</div>
+      <div class="trade-val buy">NT$340～NT$350</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">目標價</div>
-      <div class="trade-val tgt">NT$72</div>
+      <div class="trade-val tgt">NT$400</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">止損</div>
-      <div class="trade-val stop">NT$63</div>
+      <div class="trade-val stop">NT$330</div>
     </div>
     <div class="trade-cell">
       <div class="trade-label">持有週期</div>
-      <div class="trade-val">10</div>
+      <div class="trade-val">15</div>
     </div>
   </div>
-  <div class="risk-box">⚠️ 基本面不佳（虧損、營收衰退），若產業動能減弱可能領跌。</div>
-  <div class="detail-box">💡 信心評分依據：產業強勢加分，但基本面弱且RSI略高，信心中等。</div>
+  <div class="risk-box">⚠️ Fwd_PE偏高，若成長不如預期恐面臨修正；半導體產業近期偏弱。</div>
+  <div class="detail-box">💡 信心評分依據：技術面強勢但偏離20日高點，且產業偏弱，故給7分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">5871.TW</div>
+      <div class="card-company">CHAILEASE HOLDING COMPANY LIMIT</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">NT$120.50</span>
+      <span class="price-chg up">▲1.26%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 85</span>
+    <span class="badge">信心 6/10</span>
+    <span class="badge">🏭 其他業</span>
+    <span class="badge">📋 動能策略</span>
+  </div>
+  <div class="reason-box">🤖 其他業產業籃子數據缺失，但個股基本面優異：淨利率33.7%、Fwd_PE僅9.2倍，營收持平。技術面均線多頭排列，VTF=0.53偏低但MACD正向，屬穩健動能股。</div>
+  <div class="detail-box">📋 策略依據：均線多頭排列、RSI=61、MACD POS_INC，VTF=0.53偏低但動能尚可。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">NT$118～NT$120.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">NT$135</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">NT$115</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">20</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ 產業歸類不明確，缺乏同業比較；營收成長停滯，成長動能有限。</div>
+  <div class="detail-box">💡 信心評分依據：基本面估值吸引但技術面動能偏弱，故給6分。</div>
 </div>
 </div>
 <div class="section">
   <div class="section-title">
-    📋 明日掛單計畫<span class="section-count">（2支，明日可進場名額 5 支，依限價單掛買入區間上緣）</span>
+    📋 明日掛單計畫<span class="section-count">（3支，明日可進場名額 4 支，依限價單掛買入區間上緣）</span>
   </div>
   
 <div class="track-item active">
   <div class="track-header">
-    <span class="track-symbol">#1 1303.TW</span>
-    <span class="track-name">NAN YA PLASTIC</span>
+    <span class="track-symbol">#1 8150.TW</span>
+    <span class="track-name">CHIPMOS TECHNOLOGIES INC</span>
     <span class="strategy-tag">突破策略</span>
   </div>
-  <div class="track-status">✅ 建議掛單｜信心 8/10｜L2 91 分</div>
-  <div class="track-prices">掛單價 NT$228.00｜買入區間 NT$224～NT$228｜止損 NT$218｜目標 NT$250｜剩 2 天觀察期</div>
+  <div class="track-status">✅ 建議掛單｜信心 8/10｜L2 100 分</div>
+  <div class="track-prices">掛單價 NT$125.00｜買入區間 NT$122.5～NT$125｜止損 NT$120｜目標 NT$140｜剩 2 天觀察期</div>
 </div>
 
 <div class="track-item active">
   <div class="track-header">
-    <span class="track-symbol">#2 1301.TW</span>
-    <span class="track-name">FORMOSA PLASTIC</span>
-    <span class="strategy-tag">突破策略</span>
+    <span class="track-symbol">#2 8028.TW</span>
+    <span class="track-name">PHOENIX SILICON INTERNATIONAL C</span>
+    <span class="strategy-tag">動能策略</span>
   </div>
-  <div class="track-status">✅ 建議掛單｜信心 6/10｜L2 100 分</div>
-  <div class="track-prices">掛單價 NT$65.50｜買入區間 NT$64.5～NT$65.5｜止損 NT$63｜目標 NT$72｜剩 2 天觀察期</div>
+  <div class="track-status">✅ 建議掛單｜信心 7/10｜L2 92 分</div>
+  <div class="track-prices">掛單價 NT$350.00｜買入區間 NT$340～NT$350｜止損 NT$330｜目標 NT$400｜剩 4 天觀察期</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">#3 5871.TW</span>
+    <span class="track-name">CHAILEASE HOLDING COMPANY LIMIT</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">✅ 建議掛單｜信心 6/10｜L2 85 分</div>
+  <div class="track-prices">掛單價 NT$120.50｜買入區間 NT$118～NT$120.5｜止損 NT$115｜目標 NT$135｜剩 4 天觀察期</div>
 </div>
 </div>
 
   <div class="summary-box">
     <h2>📈 今日統計</h2>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-active">0 / 5</span><span class="stat-lbl">持倉／上限</span></div>
-      <div class="stat-group"><span class="stat-num c-watch">2</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-active">1 / 5</span><span class="stat-lbl">持倉／上限</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">3</span><span class="stat-lbl">支留意</span></div>
       <div class="stat-group"><span class="stat-num c-invalid">0</span><span class="stat-lbl">支失效</span></div>
     </div>
     <div class="stat-row">
-      <div class="stat-group"><span class="stat-num c-new">2</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-new">3</span><span class="stat-lbl">支新增</span></div>
       <div class="stat-group"><span class="stat-num c-reset">0</span><span class="stat-lbl">支重新入選</span></div>
       <div class="stat-group"><span class="stat-num c-removed">0</span><span class="stat-lbl">支移除</span></div>
-      
+      <div class="stat-group"><span class="stat-num" style="color:#a855f7">1</span><span class="stat-lbl">支結算</span></div>
     </div>
   </div>
 </div>

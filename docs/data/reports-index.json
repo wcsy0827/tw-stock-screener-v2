@@ -3,9 +3,29 @@
     "date": "2026-07-15",
     "weekday": "三",
     "active": 0,
-    "watch": 0,
+    "watch": 2,
     "invalid": 0,
-    "new": 0,
+    "new": 2,
+    "reset": 0,
+    "removed": 0
+  },
+  {
+    "date": "2026-07-16",
+    "weekday": "四",
+    "active": 1,
+    "watch": 3,
+    "invalid": 0,
+    "new": 3,
+    "reset": 0,
+    "removed": 0
+  },
+  {
+    "date": "2026-07-17",
+    "weekday": "五",
+    "active": 1,
+    "watch": 2,
+    "invalid": 0,
+    "new": 2,
     "reset": 0,
     "removed": 0
   }

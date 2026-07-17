@@ -1,0 +1,156 @@
+{
+  "history_records": [
+    {
+      "meta_data": {
+        "ticker": "1303.TW",
+        "company_name": "NAN YA PLASTIC",
+        "sector": "塑膠工業"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-15",
+        "entry_regime": "CONSOLIDATION_VOLATILE",
+        "market_breadth_pct": 53.8,
+        "vix_value": 36.61,
+        "l2_score": 91.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF_Score=1.5，MACD POS_INC，RSI=78略高但仍在50~65區間外，惟產業強勢且量能充足（Vol_vs_20DAvg=2.08），採保守突破。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 224.0,
+        "buy_zone_upper": 228.0,
+        "planned_target": "NT$250",
+        "planned_stop_loss": "$218.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-16",
+        "actual_entry_price": 223.0,
+        "exit_date": "2026-07-16",
+        "actual_exit_price": 218.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1,
+        "exit_note": null,
+        "locked_days": 0,
+        "exit_deferred": false
+      },
+      "performance_metrics": {
+        "return_pct": -2.24,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "1301.TW",
+        "company_name": "FORMOSA PLASTIC",
+        "sector": "塑膠工業"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-15",
+        "entry_regime": "CONSOLIDATION_VOLATILE",
+        "market_breadth_pct": 53.8,
+        "vix_value": 36.61,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 6,
+        "ai_strategy_reason": "VTF_Score=1.38，MACD POS_INC，RSI=67.7在50~65區間外但接近，Vol_vs_20DAvg=1.9，採保守突破。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 64.5,
+        "buy_zone_upper": 65.5,
+        "planned_target": "NT$72",
+        "planned_stop_loss": "$63.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-16",
+        "actual_entry_price": 65.5,
+        "exit_date": "2026-07-17",
+        "actual_exit_price": 63.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 2,
+        "exit_note": null,
+        "locked_days": 0,
+        "exit_deferred": false
+      },
+      "performance_metrics": {
+        "return_pct": -3.82,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "8150.TW",
+        "company_name": "CHIPMOS TECHNOLOGIES INC",
+        "sector": "半導體業"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-16",
+        "entry_regime": "CONSOLIDATION_VOLATILE",
+        "market_breadth_pct": 50.4,
+        "vix_value": 34.46,
+        "l2_score": 100.0,
+        "assigned_strategy": "突破策略",
+        "ai_confidence": 8,
+        "ai_strategy_reason": "VTF=1.58、MACD POS_INC、RSI=61.3，符合保守突破條件；距20日高點125元僅2%，量能確認(Vol_vs_20DAvg=2.67)。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 122.5,
+        "buy_zone_upper": 125.0,
+        "planned_target": "NT$140",
+        "planned_stop_loss": "$120.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-17",
+        "actual_entry_price": 116.0,
+        "exit_date": "2026-07-17",
+        "actual_exit_price": 116.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1,
+        "exit_note": null,
+        "locked_days": 0,
+        "exit_deferred": false
+      },
+      "performance_metrics": {
+        "return_pct": 0.0,
+        "is_win": false
+      }
+    },
+    {
+      "meta_data": {
+        "ticker": "8028.TW",
+        "company_name": "PHOENIX SILICON INTERNATIONAL C",
+        "sector": "半導體業"
+      },
+      "signal_details": {
+        "signal_date": "2026-07-16",
+        "entry_regime": "CONSOLIDATION_VOLATILE",
+        "market_breadth_pct": 50.4,
+        "vix_value": 34.46,
+        "l2_score": 92.5,
+        "assigned_strategy": "動能策略",
+        "ai_confidence": 7,
+        "ai_strategy_reason": "均線多頭排列、RSI=62.7、VTF=2.47、Momentum_ATR=1.74，動能強勁但未達突破條件。"
+      },
+      "execution_plan": {
+        "buy_zone_lower": 340.0,
+        "buy_zone_upper": 350.0,
+        "planned_target": "NT$400",
+        "planned_stop_loss": "$330.00"
+      },
+      "actual_outcome": {
+        "triggered_date": "2026-07-17",
+        "actual_entry_price": 331.0,
+        "exit_date": "2026-07-17",
+        "actual_exit_price": 330.0,
+        "exit_reason": "CLOSED_LOSS",
+        "holding_days": 1,
+        "exit_note": null,
+        "locked_days": 0,
+        "exit_deferred": false
+      },
+      "performance_metrics": {
+        "return_pct": -0.3,
+        "is_win": false
+      }
+    }
+  ]
+}
