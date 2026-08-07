@@ -18,6 +18,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -31,12 +32,37 @@ SHORTLIST_COUNT = 250
 TARGET_COUNT = 150
 HYSTERESIS_BAND = 180
 
+MAX_RETRIES = 3
+RETRY_DELAY = 5  # 秒，第 N 次重試前等待 RETRY_DELAY * N 秒
+
 _STOCK_CODE_RE = re.compile(r"^[1-9]\d{3}$")  # 4位數字且不以0開頭，排除ETF(00xx)/權證
 _ROSTER_PATH = Path(__file__).parent.parent / "data" / "universe_roster.json"
 
 
 def _is_ordinary_stock(code: str) -> bool:
     return bool(_STOCK_CODE_RE.match(code))
+
+
+def _get_with_retry(url: str, **kwargs) -> requests.Response:
+    """requests.get + raise_for_status，遇暫時性錯誤（連線被拒/逾時等）重試。
+
+    2026-08-07 GitHub Actions 排程首次執行時實測觸發：同一個 CI runner、
+    同一個 openapi.twse.com.tw host，前一個請求成功、緊接著下一個請求
+    ConnectionError（Connection refused）——判定為暫時性網路問題而非
+    TWSE 端封鎖雲端 IP（若是封鎖，前一個請求不會成功），故補重試而非
+    改為靜默降級（這兩支 API 是候選池排序的必要資料，非可有可無的輔助
+    欄位，寧可重試後仍失敗就整支中斷，也不要用空資料悄悄跑出錯誤名單）。
+    """
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.get(url, **kwargs)
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            if attempt == MAX_RETRIES:
+                raise
+            print(f"[universe] {url} 請求失敗（第{attempt}次），{RETRY_DELAY * attempt}秒後重試：{e}")
+            time.sleep(RETRY_DELAY * attempt)
 
 
 def fetch_industry_names() -> dict[str, str]:
@@ -48,8 +74,7 @@ def fetch_industry_names() -> dict[str, str]:
     抓取失敗時回傳空字典，呼叫端 fallback 為 t187ap03_L 的數字代碼，不中斷流程。
     """
     try:
-        resp = requests.get(ISIN_LIST_URL, timeout=30)
-        resp.raise_for_status()
+        resp = _get_with_retry(ISIN_LIST_URL, timeout=30)
         html = resp.content.decode("big5hkscs", errors="replace")
         df = pd.read_html(io.StringIO(html))[0]
     except Exception as e:
@@ -72,8 +97,7 @@ def fetch_industry_names() -> dict[str, str]:
 
 def fetch_company_directory() -> dict[str, dict]:
     """回傳 {code: {"name":, "industry":}}；industry 優先取 ISIN 頁面中文名稱，缺失時 fallback 為代碼。"""
-    resp = requests.get(COMPANY_LIST_URL, timeout=30)
-    resp.raise_for_status()
+    resp = _get_with_retry(COMPANY_LIST_URL, timeout=30)
     rows = resp.json()
 
     industry_names = fetch_industry_names()
@@ -94,8 +118,7 @@ def fetch_company_directory() -> dict[str, dict]:
 
 def fetch_daily_trade_value() -> dict[str, float]:
     """回傳 {code: 當日成交金額}，用於 shortlist 初篩排序（低成本，僅一次 API 呼叫）。"""
-    resp = requests.get(DAILY_QUOTE_URL, timeout=30)
-    resp.raise_for_status()
+    resp = _get_with_retry(DAILY_QUOTE_URL, timeout=30)
     rows = resp.json()
 
     trade_value: dict[str, float] = {}
