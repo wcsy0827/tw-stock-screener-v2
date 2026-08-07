@@ -94,10 +94,13 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
         `git push` 前需 `git branch --set-upstream-to=origin/master master`
         （新 clone 出來的 checkout 預設無 upstream，否則 `publisher._git_push`
         內建的裸 `git push` 會失敗）。
-        **待辦**：需使用者自行在 GitHub repo 設定 `DEEPSEEK_API_KEY` secret
-        （`gh secret set DEEPSEEK_API_KEY --repo wcsy0827/tw-stock-screener-v2`）
-        才會啟用 L3 AI 精選；且首次 workflow 觸發後應檢查 Actions 執行紀錄
-        確認 push 成功、`is_safe_to_run()` guard 未誤擋。
+        `DEEPSEEK_API_KEY` secret 使用者已設定完成，L3 AI 精選正常運作
+        （非 fallback）。首次真實觸發（2026-08-07 手動 `workflow_dispatch`）
+        遇到 `openapi.twse.com.tw` 暫時性 ConnectionError 導致整支崩潰，
+        已修復見 `src/universe.py` 的 `_get_with_retry()`（`tests/test_universe.py`
+        新增，fail-then-pass：5 failed → 5 passed）；修復後重新觸發一次
+        end-to-end 驗證成功（Universe 150 → L1 91 → L2 27 → L3 3，報告已
+        push 且 GitHub Pages 上線可見）。
 - [x] **main.py 完整接線**：L0(universe)→L1(filter)→L2(scorer)→L3(ranker)→
       tracker→publisher 全流程已串通，`python main.py --dry-run` 端到端驗證
       通過（無 DEEPSEEK_API_KEY 時 L3 走 fallback，`is_fallback=True` 的結果
