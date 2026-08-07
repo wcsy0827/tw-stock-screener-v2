@@ -78,12 +78,18 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
       顯示支援——`pending_exit` 部位顯示「⏳ 跌停鎖死排隊中」，「今日結算」
       區塊依 `tracker.py` 新增的 `_exit_note` 欄位優先顯示漲跌停鎖死相關的
       精確出場說明（跌停鎖死無量陰跌/順延解除/停牌強制結算），避免使用者
-      誤以為系統照 AI 原始止損價正常成交。GitHub Pages 遠端尚未設定時
-      `_check_git_remote()` 既有邏輯優雅略過 push（見下方待辦）。
-  - [ ] **待辦**：GitHub 遠端尚未設定（`git remote`為空），`publish()` 目前
-        每次執行都會優雅略過 push 並印出設定指引；正式上線前需
-        `git remote add origin ...` 並視需要建 GitHub Actions 排程（見下方
-        「尚未排入階段的觀察項」）。
+      誤以為系統照 AI 原始止損價正常成交。
+- [x] **GitHub 遠端已設定，GitHub Pages 已啟用**：公開 repo
+      [wcsy0827/tw-stock-screener-v2](https://github.com/wcsy0827/tw-stock-screener-v2)
+      （2026-08-07 由私有轉公開，經使用者確認接受選股邏輯與歷史實跑資料
+      公開的取捨，換取免費 GitHub Pages），`origin` 已指向該 repo，`master`
+      已 push 並設為預設分支，`_check_git_remote()` 已驗證能正確偵測到
+      remote（回傳 `True`）。GitHub Pages 設定為 `master` 分支 `/docs`
+      目錄，報告可於 https://wcsy0827.github.io/tw-stock-screener-v2/ 瀏覽。
+      `publish()` 之後執行會正常嘗試 push，不再略過。
+  - [ ] **GitHub Actions 排程尚未建立**：目前仍需本機手動執行
+        `python main.py`。待排程需求確認後（執行時間、`DEEPSEEK_API_KEY`
+        secret 設定方式）再建 workflow。
 - [x] **main.py 完整接線**：L0(universe)→L1(filter)→L2(scorer)→L3(ranker)→
       tracker→publisher 全流程已串通，`python main.py --dry-run` 端到端驗證
       通過（無 DEEPSEEK_API_KEY 時 L3 走 fallback，`is_fallback=True` 的結果
@@ -97,4 +103,3 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
 ## 尚未排入階段的觀察項
 
 - [ ] TPEx 上櫃（`.TWO`）納入 universe，目前僅涵蓋 TWSE 上市
-- [ ] GitHub 遠端/Actions 排程——本機驗證穩定後再建

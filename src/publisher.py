@@ -6,8 +6,8 @@
 - pending_exit 部位在「有效追蹤清單」顯示「⏳ 跌停鎖死排隊中」標記。
 - 「今日結算」區塊依 `_exit_note`（tracker.py 新增欄位）區分一般停損／
   跌停鎖死順延解除／強制結算，避免使用者誤以為系統照 AI 原始止損價成交。
-- GitHub Pages 遠端尚未設定（見 TODO.md）時，`_check_git_remote()` 既有邏輯
-  已優雅略過 push 並印出設定指引，不需額外調整。
+- `_check_git_remote()` 於 remote 未設定時優雅略過 push 並印出設定指引；
+  GitHub 遠端現已設定完成（見 README.md），一般執行會正常 push。
 """
 
 from __future__ import annotations

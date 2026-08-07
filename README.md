@@ -97,9 +97,14 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死
    成分股」endpoint（那是 FTSE 方法論下的 0050/0051 ETF 成分股）。目前用 30 日均
    成交金額排序近似，且僅涵蓋 TWSE 上市（`.TW`），未涵蓋 TPEx 上櫃（`.TWO`）。
 
-5. **GitHub 遠端尚未設定**：`publisher.publish()` 每次執行都會生成本機 HTML 報告，
-   但因 `git remote` 為空會優雅略過 push（印出設定指引）。正式上線前需
-   `git remote add origin ...`。
+5. **GitHub Actions 排程尚未建立**：GitHub 遠端已設定（公開 repo
+   [wcsy0827/tw-stock-screener-v2](https://github.com/wcsy0827/tw-stock-screener-v2)，
+   已於 2026-08-07 由私有轉公開以免費使用 GitHub Pages），
+   `publisher.publish()` 現在會正常 push。GitHub Pages 已啟用（`master` 分支
+   `/docs` 目錄），報告可於 https://wcsy0827.github.io/tw-stock-screener-v2/
+   瀏覽。仍需手動本機執行 `python main.py`，尚未建自動排程。
+   **注意**：repo 為公開，`data/` 下的歷史實跑資料（追蹤名單、績效歸檔、
+   VIX 歷史）與選股邏輯原始碼皆可被任何人存取。
 
 ## 快取與持久化檔案
 
@@ -122,4 +127,5 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死
 
 處置股/全額交割股排除、tracker（含漲跌停止損模擬）、L3 AI 精選（DeepSeek）、
 報告發布皆已完成並串通。`LOCK_VOLUME_RATIO` 已校準為 0.6（詳見上方「未解決
-的設計問題」第 2 項）。剩餘：GitHub 遠端/Actions 排程、TPEx 上櫃納入 universe。
+的設計問題」第 2 項）。GitHub 遠端已設定。剩餘：GitHub Actions 排程、
+TPEx 上櫃納入 universe。
