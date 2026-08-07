@@ -97,12 +97,14 @@ scripts/       一次性校準腳本（HV20 邊界、L1 門檻、漲跌停鎖死
    成分股」endpoint（那是 FTSE 方法論下的 0050/0051 ETF 成分股）。目前用 30 日均
    成交金額排序近似，且僅涵蓋 TWSE 上市（`.TW`），未涵蓋 TPEx 上櫃（`.TWO`）。
 
-5. **GitHub Actions 排程尚未建立**：GitHub 遠端已設定（公開 repo
+5. **GitHub Actions 排程已建立**：GitHub 遠端已設定（公開 repo
    [wcsy0827/tw-stock-screener-v2](https://github.com/wcsy0827/tw-stock-screener-v2)，
-   已於 2026-08-07 由私有轉公開以免費使用 GitHub Pages），
-   `publisher.publish()` 現在會正常 push。GitHub Pages 已啟用（`master` 分支
-   `/docs` 目錄），報告可於 https://wcsy0827.github.io/tw-stock-screener-v2/
-   瀏覽。仍需手動本機執行 `python main.py`，尚未建自動排程。
+   已於 2026-08-07 由私有轉公開以免費使用 GitHub Pages），GitHub Pages 已啟用
+   （`master` 分支 `/docs` 目錄），報告可於
+   https://wcsy0827.github.io/tw-stock-screener-v2/ 瀏覽。
+   `.github/workflows/daily-screener.yml` 已設定週一至週五台灣時間 17:00
+   自動執行並 push 報告，仍需使用者自行設定 `DEEPSEEK_API_KEY` repo secret
+   才能啟用 L3 AI 精選（未設定時 L3 fallback 為 L2 排序）。
    **注意**：repo 為公開，`data/` 下的歷史實跑資料（追蹤名單、績效歸檔、
    VIX 歷史）與選股邏輯原始碼皆可被任何人存取。
 

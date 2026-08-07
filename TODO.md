@@ -87,9 +87,17 @@ README.md「已校準項目」章節與 `scripts/calibrate_hv.py`／`scripts/cal
       remote（回傳 `True`）。GitHub Pages 設定為 `master` 分支 `/docs`
       目錄，報告可於 https://wcsy0827.github.io/tw-stock-screener-v2/ 瀏覽。
       `publish()` 之後執行會正常嘗試 push，不再略過。
-  - [ ] **GitHub Actions 排程尚未建立**：目前仍需本機手動執行
-        `python main.py`。待排程需求確認後（執行時間、`DEEPSEEK_API_KEY`
-        secret 設定方式）再建 workflow。
+  - [x] **GitHub Actions 排程已建立**：見 `.github/workflows/daily-screener.yml`，
+        週一至週五 09:00 UTC（台灣時間 17:00，收盤 13:30 後 3.5 小時，資料
+        應已到位）自動執行 `python main.py --yes`。`DEEPSEEK_API_KEY` 走
+        repo secret（未設定時維持 L3 fallback 為 L2 排序，行為不變）；
+        `git push` 前需 `git branch --set-upstream-to=origin/master master`
+        （新 clone 出來的 checkout 預設無 upstream，否則 `publisher._git_push`
+        內建的裸 `git push` 會失敗）。
+        **待辦**：需使用者自行在 GitHub repo 設定 `DEEPSEEK_API_KEY` secret
+        （`gh secret set DEEPSEEK_API_KEY --repo wcsy0827/tw-stock-screener-v2`）
+        才會啟用 L3 AI 精選；且首次 workflow 觸發後應檢查 Actions 執行紀錄
+        確認 push 成功、`is_safe_to_run()` guard 未誤擋。
 - [x] **main.py 完整接線**：L0(universe)→L1(filter)→L2(scorer)→L3(ranker)→
       tracker→publisher 全流程已串通，`python main.py --dry-run` 端到端驗證
       通過（無 DEEPSEEK_API_KEY 時 L3 走 fallback，`is_fallback=True` 的結果
