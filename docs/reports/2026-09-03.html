@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>台股 AI 選股 2026-09-03</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f172a; --card: #1e293b; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --subtle: #475569;
+  --active: #22c55e; --watch: #eab308; --invalid: #ef4444;
+  --expired: #6b7280; --new: #3b82f6; --reset: #a855f7;
+}
+body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.6; }
+a { color: var(--new); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.container { max-width: 860px; margin: 0 auto; padding: 28px 16px 48px; }
+
+/* Header */
+.page-header { margin-bottom: 28px; }
+.page-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+.page-header .date-line { font-size: 1rem; color: var(--muted); margin-bottom: 12px; }
+.scan-bar { background: var(--card); border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--new); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.scan-bar .arrow { color: var(--border); }
+.scan-bar strong { color: var(--text); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; font-size: 0.85rem; color: var(--muted); }
+.back-link:hover { color: var(--new); text-decoration: none; }
+
+/* Section */
+.section { margin-bottom: 24px; }
+.section-title { font-size: 0.9rem; font-weight: 600; letter-spacing: 0.03em; padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.section-count { font-weight: 400; color: var(--muted); font-size: 0.82rem; margin-left: 2px; }
+
+/* Tracking rows */
+.track-item { background: var(--card); border-radius: 8px; padding: 11px 14px; margin-bottom: 7px; border-left: 3px solid var(--expired); display: grid; gap: 2px; }
+.track-item.active  { border-left-color: var(--active); }
+.track-item.watch   { border-left-color: var(--watch); }
+.track-item.invalid { border-left-color: var(--invalid); }
+.track-item.expired { border-left-color: var(--expired); opacity: 0.6; }
+.track-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.track-symbol { font-weight: 700; font-size: 0.95rem; }
+.track-name { color: var(--muted); font-size: 0.85rem; }
+.strategy-tag { font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; background: var(--border); color: var(--text); margin-left: auto; white-space: nowrap; }
+.track-status { font-size: 0.82rem; color: var(--muted); }
+.track-prices { font-size: 0.82rem; color: var(--text); margin-top: 2px; }
+.track-prices .cur-price { color: var(--text); font-weight: 600; }
+
+/* Stock cards */
+.stock-card { background: var(--card); border-radius: 10px; border: 1px solid var(--border); padding: 16px; margin-bottom: 12px; transition: border-color 0.15s; }
+.stock-card:hover { border-color: var(--new); }
+.stock-card.reset-card:hover { border-color: var(--reset); }
+.card-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.card-rank { background: var(--border); color: var(--muted); border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.card-title { flex: 1; }
+.card-symbol { font-size: 1.1rem; font-weight: 800; color: var(--new); }
+.reset-card .card-symbol { color: var(--reset); }
+.card-company { font-size: 0.88rem; color: var(--muted); }
+.card-price { text-align: right; }
+.card-price .price-val { font-size: 1rem; font-weight: 700; display: block; }
+.card-price .price-chg { font-size: 0.8rem; }
+.price-chg.up   { color: var(--active); }
+.price-chg.down { color: var(--invalid); }
+.price-chg.flat { color: var(--muted); }
+.card-badges { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+.badge { font-size: 0.73rem; padding: 2px 8px; border-radius: 4px; background: var(--border); color: var(--muted); }
+.reason-box { font-size: 0.875rem; line-height: 1.55; color: var(--text); padding: 10px 12px; background: #0f172a; border-radius: 7px; margin-bottom: 10px; }
+.trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-bottom: 10px; }
+.trade-cell { background: #0f172a; border-radius: 7px; padding: 8px 10px; }
+.trade-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 2px; }
+.trade-val { font-size: 0.9rem; font-weight: 700; }
+.trade-val.buy  { color: var(--new); }
+.trade-val.tgt  { color: var(--active); }
+.trade-val.stop { color: var(--invalid); }
+.risk-box { font-size: 0.8rem; line-height: 1.5; color: #fcd34d; background: rgba(234,179,8,0.08); border-radius: 7px; padding: 8px 12px; border-left: 2px solid var(--watch); }
+.detail-box { font-size: 0.8rem; line-height: 1.5; color: #94a3b8; background: rgba(148,163,184,0.06); border-radius: 7px; padding: 8px 12px; border-left: 2px solid #475569; margin-top: 6px; }
+
+/* Summary footer */
+.summary-box { background: var(--card); border-radius: 10px; padding: 16px 20px; margin-top: 12px; border-top: 3px solid var(--new); }
+.summary-box h2 { font-size: 0.9rem; margin-bottom: 12px; color: var(--muted); letter-spacing: 0.03em; }
+.stat-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 8px; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-group { display: flex; align-items: baseline; gap: 6px; }
+.stat-num { font-size: 1.1rem; font-weight: 800; }
+.stat-num.c-active  { color: var(--active); }
+.stat-num.c-watch   { color: var(--watch); }
+.stat-num.c-invalid { color: var(--invalid); }
+.stat-num.c-new     { color: var(--new); }
+.stat-num.c-reset   { color: var(--reset); }
+.stat-num.c-removed { color: var(--expired); }
+.stat-lbl { font-size: 0.8rem; color: var(--muted); }
+
+/* Index page */
+.index-hero { text-align: center; padding: 32px 0 20px; }
+.index-hero h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 6px; }
+.index-hero p { color: var(--muted); font-size: 0.9rem; }
+.report-list { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.report-entry { background: var(--card); border-radius: 9px; padding: 14px 18px; border: 1px solid var(--border); display: flex; align-items: center; gap: 16px; text-decoration: none; color: var(--text); transition: border-color 0.15s; }
+.report-entry:hover { border-color: var(--new); text-decoration: none; color: var(--text); }
+.report-date { font-weight: 700; font-size: 0.95rem; min-width: 130px; }
+.report-weekday { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+.report-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.chip { font-size: 0.75rem; padding: 2px 9px; border-radius: 12px; font-weight: 600; }
+.chip.active  { background: rgba(34,197,94,0.15);  color: var(--active); }
+.chip.watch   { background: rgba(234,179,8,0.15);  color: var(--watch); }
+.chip.invalid { background: rgba(239,68,68,0.12);  color: var(--invalid); }
+.chip.new     { background: rgba(59,130,246,0.15); color: var(--new); }
+.chip.reset   { background: rgba(168,85,247,0.12); color: var(--reset); }
+.chip.neutral { background: var(--border); color: var(--muted); }
+.arrow-icon { color: var(--border); font-size: 1rem; }
+.empty-state { text-align: center; padding: 48px; color: var(--muted); }
+
+/* Market Regime Dashboard */
+.market-dashboard { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; border: 1px solid var(--border); }
+.market-dashboard.bull          { border-left: 4px solid var(--active);  background: rgba(34,197,94,0.07); }
+.market-dashboard.consolidation { border-left: 4px solid var(--watch);   background: rgba(234,179,8,0.07); }
+.market-dashboard.panic         { border-left: 4px solid #f97316;        background: rgba(249,115,22,0.07); }
+.market-dashboard.bear          { border-left: 4px solid var(--invalid); background: rgba(239,68,68,0.1); }
+.regime-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.regime-name { font-size: 1rem; font-weight: 700; }
+.regime-strategy { font-size: 0.82rem; color: var(--muted); margin-left: auto; }
+.regime-metrics { display: flex; gap: 20px; flex-wrap: wrap; }
+.regime-metric { min-width: 80px; }
+.regime-metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 2px; }
+.regime-metric-val { font-size: 1rem; font-weight: 700; }
+.regime-metric-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+.spy-above { color: var(--active); }
+.spy-below { color: var(--invalid); }
+.defense-banner { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; padding: 20px 24px; text-align: center; margin-bottom: 16px; }
+.defense-banner .defense-title { font-size: 1rem; font-weight: 700; color: var(--invalid); margin-bottom: 6px; }
+.defense-banner .defense-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+
+/* System info (index page) */
+details { margin-bottom: 20px; }
+summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: var(--card); border-radius: 9px; border: 1px solid var(--border); font-weight: 600; font-size: 0.9rem; user-select: none; }
+summary::-webkit-details-marker { display: none; }
+details summary::before { content: "▶"; font-size: 0.65rem; color: var(--muted); transition: transform 0.2s; flex-shrink: 0; }
+details[open] summary::before { transform: rotate(90deg); }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 12px; }
+.info-card { background: var(--card); border-radius: 9px; border: 1px solid var(--border); padding: 14px 16px; }
+.info-card h3 { font-size: 0.78rem; font-weight: 700; margin-bottom: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+.info-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.info-table th { text-align: left; padding: 4px 8px; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.info-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,0.4); line-height: 1.5; vertical-align: top; }
+.info-table td:first-child { white-space: nowrap; }
+.info-table tr:last-child td { border-bottom: none; }
+.pipe-flow { display: flex; flex-direction: column; gap: 3px; }
+.pipe-step { display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; line-height: 1.5; }
+.pipe-badge { background: var(--border); color: var(--muted); border-radius: 4px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.pipe-arrow { color: var(--subtle); font-size: 0.75rem; padding-left: 16px; }
+.report-section-title { font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+
+.tip-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; }
+.tip-icon { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: var(--border); color: var(--muted); font-size: 0.68rem; font-weight: 700; cursor: help; flex-shrink: 0; }
+.tip-box { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.65; color: var(--text); font-weight: 400; width: 230px; z-index: 20; box-shadow: 0 4px 16px rgba(0,0,0,0.5); white-space: normal; text-align: left; }
+.tip-wrap:hover .tip-box { display: block; }
+
+/* Data freshness indicator */
+.date-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 4px; }
+.date-label { font-size: 0.8rem; color: var(--muted); }
+.date-val { font-size: 1rem; color: var(--text); font-weight: 600; }
+.freshness-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.freshness-ok    { background: rgba(34,197,94,0.15);  color: var(--active); }
+.freshness-stale { background: rgba(234,179,8,0.12);  color: var(--watch); }
+.tz-note { font-size: 0.8rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.run-info { font-size: 0.75rem; color: var(--muted); margin-bottom: 12px; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; display: none; line-height: 1.8; }
+.run-info.visible { display: block; }
+
+@media (max-width: 600px) {
+  .scan-bar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .card-header { flex-wrap: wrap; }
+  .card-price { text-align: left; }
+  .report-entry { flex-wrap: wrap; }
+  .report-chips { margin-left: 0; }
+  .regime-strategy { margin-left: 0; }
+  .tip-box { right: auto; left: 0; }
+  .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="page-header">
+    <h1>📊 台股 AI 選股報告</h1>
+    <div class="date-meta">
+      <span class="date-label">台股資料截止日</span>
+      <span class="date-val">📅 2026-09-03（四）</span>
+      <span class="freshness-badge" id="freshness-badge" onclick="toggleRunInfo()" title="點擊查看資料來源詳情"></span>
+    </div>
+    <div class="run-info" id="run-info">載入中…</div>
+    <div class="scan-bar">
+      掃描 <strong>候選池 150支</strong>
+      <span class="arrow">→</span> L1 <strong>109支</strong>
+      <span class="arrow">→</span> L2 <strong>26支</strong>
+      <span class="arrow">→</span> AI精選 <strong>3支</strong>
+    </div>
+    <a class="back-link" href="../index.html">← 返回首頁</a>
+  </div>
+<script>
+(function() {
+  var d = '2026-09-03';
+  var parts = d.split('-');
+  var reportDay = Date.UTC(+parts[0], +parts[1]-1, +parts[2]);
+  var now = new Date();
+  var todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  var diffDays = Math.round((todayUTC - reportDay) / 86400000);
+  var badge = document.getElementById('freshness-badge');
+  if (!badge) return;
+  if (diffDays <= 0) {
+    badge.textContent = '✓ 今日最新數據 ▸';
+    badge.className = 'freshness-badge freshness-ok';
+  } else {
+    badge.textContent = '↻ 非最新，最近一次執行 ' + d + ' ▸';
+    badge.className = 'freshness-badge freshness-stale';
+  }
+})();
+
+function toggleRunInfo() {
+  var info = document.getElementById('run-info');
+  if (!info) return;
+  if (info.classList.contains('visible')) {
+    info.classList.remove('visible');
+    return;
+  }
+  info.classList.add('visible');
+  if (info._loaded) return;
+  info._loaded = true;
+  fetch('../data/last_run.json?_=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var utc = d.run_at_utc || '—';
+      var dt = new Date(utc);
+      var twStr = dt.toLocaleString('zh-TW', {timeZone:'Asia/Taipei', hour12:false,
+        year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'});
+      info.innerHTML =
+        '<strong>資料來源核實</strong><br>' +
+        '執行時間（台灣）：' + twStr + '<br>' +
+        '資料截止日：' + (d.market_date || '—') + '（若於盤中執行，系統會自動捨棄當日未收盤數據，此欄可能為前一交易日）<br>' +
+        '掃描：候選池 ' + (d.total_scanned || '—') + ' 支 → L1 ' +
+        (d.l1_count || '—') + ' → L2 ' + (d.l2_count || '—') +
+        ' → AI精選 ' + (d.ai_count || '—') + ' 支';
+    })
+    .catch(function() {
+      info.textContent = '⚠ 無法載入 last_run.json（本地預覽時正常，GitHub Pages 上才有此檔案）';
+    });
+}
+</script>
+
+  
+<div class="market-dashboard consolidation">
+  <div class="regime-header">
+    <span class="regime-name">⚡ 高波動整理</span>
+    <span class="regime-strategy"><span class="tip-wrap">主推：突破策略（保守）<span class="tip-icon">?</span><span class="tip-box">條件：市場廣度 35～60% 且波動率 ≥ 19.4（高波動整理）<br>L2 門檻提高至 65 分；要求更強確認訊號，不明確一律跳過</span></span></span>
+  </div>
+  <div class="regime-metrics">
+    <div class="regime-metric">
+      <div class="regime-metric-label">市場廣度</div>
+      <div class="regime-metric-val">68.2%</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">波動率</div>
+      <div class="regime-metric-val">25.6</div>
+      <div class="regime-metric-sub">中度恐慌（真VIX）</div>
+    </div>
+    <div class="regime-metric">
+      <div class="regime-metric-label">加權指數位置</div>
+      <div class="regime-metric-val spy-above">✅ EMA20 之上</div>
+    </div>
+  </div>
+</div>
+
+  
+<div class="summary-box" style="margin-bottom:20px;border-top-color:#a855f7">
+  <h2>📊 歷史選股績效（累計 4 筆結算）</h2>
+  <div class="stat-row">
+    <div class="stat-group">
+      <span class="stat-num c-new">0.0%</span>
+      <span class="stat-lbl">整體勝率</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num c-invalid">-1.59%</span>
+      <span class="stat-lbl">平均回報</span>
+    </div>
+    <div class="stat-group">
+      <span class="stat-num" style="color:var(--muted)">4</span>
+      <span class="stat-lbl">筆結算</span>
+    </div>
+  </div>
+  <div class="stat-row"><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">0.0%</span><span class="stat-lbl">突破策略勝率</span></div><div class="stat-group"><span class="stat-num" style="font-size:0.95rem">0.0%</span><span class="stat-lbl">動能策略勝率</span></div></div>
+</div>
+
+  
+<div class="section">
+  <div class="section-title">
+    ✅ 有效追蹤清單<span class="section-count">（1支，上限 5 支）</span>
+  </div>
+  
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">5871.TW</span>
+    <span class="track-name">CHAILEASE HOLDING COMPANY LIMIT</span>
+    <span class="strategy-tag">動能策略</span>
+  </div>
+  <div class="track-status">持倉 2 / 20 天 ✅ ｜ <span class="c-invalid" style="font-weight:700">-7.08%</span></div>
+  <div class="track-prices"><span class="cur-price">NT$111.50</span>｜進場 NT$120.00｜目標 NT$135｜止損 NT$115.00</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🟡 留意清單<span class="section-count">（3支）</span>
+  </div>
+  
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">2884.TW</span>
+    <span class="track-name">E SUN FINANCIAL HOLDINGS</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$43.2～NT$43.5｜目標 NT$47.5｜止損 NT$41.5｜信心 8/10｜L2 82 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">3045.TW</span>
+    <span class="track-name">TAIWAN MOBILE CO</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$117.0～NT$118.0｜目標 NT$130.0｜止損 NT$115.6｜信心 7/10｜L2 67 分</div>
+</div>
+
+<div class="track-item watch">
+  <div class="track-header">
+    <span class="track-symbol">2885.TW</span>
+    <span class="track-name">YUANTA FINANCIAL HOLDING CO. LT</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 1 天（等待回落至買入區間，剩 2 天自動移除）</div>
+  <div class="track-prices">買入區間 NT$68.0～NT$68.5｜目標 NT$75.0｜止損 NT$66.0｜信心 7/10｜L2 72 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    ❌ 失效訊號<span class="section-count">（2支，仍在追蹤期內）</span>
+  </div>
+  
+<div class="track-item invalid">
+  <div class="track-header">
+    <span class="track-symbol">2880.TW</span>
+    <span class="track-name">HUA NAN FINANCIAL HOLDINGS CO</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 2 天 ── 已追高，錯過買點（剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">NT$43.45</span>｜買入區間 NT$39.5～NT$40.0｜目標 NT$44｜止損 NT$38.5｜信心 8/10｜L2 91 分</div>
+</div>
+
+<div class="track-item invalid">
+  <div class="track-header">
+    <span class="track-symbol">2886.TW</span>
+    <span class="track-name">MEGA FINANCIAL HOLDING CO</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">第 2 天 ── 已追高，錯過買點（剩 1 天自動移除）</div>
+  <div class="track-prices"><span class="cur-price">NT$50.40</span>｜買入區間 NT$47.0～NT$47.5｜目標 NT$52｜止損 NT$46.0｜信心 7/10｜L2 74 分</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    🆕 今日新進觀察名單<span class="section-count">（3支）</span>
+  </div>
+  
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">1</div>
+    <div class="card-title">
+      <div class="card-symbol">2884.TW</div>
+      <div class="card-company">E SUN FINANCIAL HOLDINGS</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">NT$43.20</span>
+      <span class="price-chg up">▲6.67%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 82</span>
+    <span class="badge">信心 8/10</span>
+    <span class="badge">🏭 金融保險業</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 金融保險業近5日強漲7.2%，產業趨勢強勁支撐個股表現。基本面優異，Fwd_PE僅15.9倍，淨利率高達40.9%，營收年增34.4%，獲利品質與成長性俱佳。VTF_Score達1.81，量價配合良好，雖RSI偏高但產業動能強勁，Short_Float_Pct無數據，風險可控。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.81，RSI=82.1略高於65，但MACD POS_INC，股價距High_20D僅0.7%，量能放大2.28倍，符合突破條件。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">NT$43.2～NT$43.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">NT$47.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">NT$41.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ RSI達82.1，短線過熱，可能面臨技術性回調；金融股波動較低，但需留意大盤高波動環境下的系統性風險。</div>
+  <div class="detail-box">💡 信心評分依據：產業強勢與基本面優異加分，但RSI過熱與VTF未達2.0扣分，故給8分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">2</div>
+    <div class="card-title">
+      <div class="card-symbol">3045.TW</div>
+      <div class="card-company">TAIWAN MOBILE CO</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">NT$118.00</span>
+      <span class="price-chg up">▲1.72%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 67</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 通信網路業</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 通信網路業近5日上漲4.3%，產業趨勢穩健。個股基本面穩健，Fwd_PE 20.9倍尚屬合理，淨利率8.0%，營收年增4.1%。股價創20日新高，量能放大1.35倍，MACD正向遞增，技術面突破訊號明確，惟RS_vs_Sector為-2.5%，略遜於同業，但整體仍具投資價值。</div>
+  <div class="detail-box">📋 策略依據：VTF=1.13，RSI=72.7略高，但MACD POS_INC，股價距High_20D僅0%，量能放大1.13倍，突破訊號存在但量能稍弱。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">NT$117.0～NT$118.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">NT$130.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">NT$115.6</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ RS_vs_Sector為-2.5%，顯示近期表現落後同業，可能反映個別利空；RSI達72.7，短線有過熱風險。</div>
+  <div class="detail-box">💡 信心評分依據：突破訊號明確但量能未達1.5倍，且RS_vs_Sector為負，故給7分。</div>
+</div>
+
+<div class="stock-card ">
+  <div class="card-header">
+    <div class="card-rank">3</div>
+    <div class="card-title">
+      <div class="card-symbol">2885.TW</div>
+      <div class="card-company">YUANTA FINANCIAL HOLDING CO. LT</div>
+    </div>
+    <div class="card-price">
+      <span class="price-val">NT$68.50</span>
+      <span class="price-chg up">▲2.70%</span>
+    </div>
+  </div>
+  <div class="card-badges">
+    <span class="badge">📊 評分 72</span>
+    <span class="badge">信心 7/10</span>
+    <span class="badge">🏭 金融保險業</span>
+    <span class="badge">📋 突破策略</span>
+  </div>
+  <div class="reason-box">🤖 金融保險業近5日強漲7.2%，產業趨勢強勁。個股基本面亮眼，Fwd_PE僅17.4倍，淨利率34.6%，營收年增53.9%，獲利成長動能強勁。技術面呈現多頭排列，VTF_Score為0.57，量能溫和放大，MACD正向遞增，股價接近20日高點，突破在即。</div>
+  <div class="detail-box">📋 策略依據：VTF=0.57，RSI=66.3，MACD POS_INC，股價距High_20D僅1.3%，量能放大1.54倍，符合突破條件但VTF偏低。</div>
+  <div class="trade-grid">
+    <div class="trade-cell">
+      <div class="trade-label">買入區間</div>
+      <div class="trade-val buy">NT$68.0～NT$68.5</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">目標價</div>
+      <div class="trade-val tgt">NT$75.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">止損</div>
+      <div class="trade-val stop">NT$66.0</div>
+    </div>
+    <div class="trade-cell">
+      <div class="trade-label">持有週期</div>
+      <div class="trade-val">10</div>
+    </div>
+  </div>
+  <div class="risk-box">⚠️ RS_vs_Sector為-0.2%，表現與產業持平，但Short_Float_Pct無數據，需留意潛在賣壓；RSI 66.3尚屬健康，惟大盤高波動可能影響金融股。</div>
+  <div class="detail-box">💡 信心評分依據：基本面與產業趨勢加分，但VTF未達1.5且RS_vs_Sector為負，故給7分。</div>
+</div>
+</div>
+<div class="section">
+  <div class="section-title">
+    📋 明日掛單計畫<span class="section-count">（3支，明日可進場名額 4 支，依限價單掛買入區間上緣）</span>
+  </div>
+  
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">#1 2884.TW</span>
+    <span class="track-name">E SUN FINANCIAL HOLDINGS</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">✅ 建議掛單｜信心 8/10｜L2 82 分</div>
+  <div class="track-prices">掛單價 NT$43.50｜買入區間 NT$43.2～NT$43.5｜止損 NT$41.5｜目標 NT$47.5｜剩 2 天觀察期</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">#2 2885.TW</span>
+    <span class="track-name">YUANTA FINANCIAL HOLDING CO. LT</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">✅ 建議掛單｜信心 7/10｜L2 72 分</div>
+  <div class="track-prices">掛單價 NT$68.50｜買入區間 NT$68.0～NT$68.5｜止損 NT$66.0｜目標 NT$75.0｜剩 2 天觀察期</div>
+</div>
+
+<div class="track-item active">
+  <div class="track-header">
+    <span class="track-symbol">#3 3045.TW</span>
+    <span class="track-name">TAIWAN MOBILE CO</span>
+    <span class="strategy-tag">突破策略</span>
+  </div>
+  <div class="track-status">✅ 建議掛單｜信心 7/10｜L2 67 分</div>
+  <div class="track-prices">掛單價 NT$118.00｜買入區間 NT$117.0～NT$118.0｜止損 NT$115.6｜目標 NT$130.0｜剩 2 天觀察期</div>
+</div>
+</div>
+
+  <div class="summary-box">
+    <h2>📈 今日統計</h2>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-active">1 / 5</span><span class="stat-lbl">持倉／上限</span></div>
+      <div class="stat-group"><span class="stat-num c-watch">3</span><span class="stat-lbl">支留意</span></div>
+      <div class="stat-group"><span class="stat-num c-invalid">2</span><span class="stat-lbl">支失效</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-group"><span class="stat-num c-new">3</span><span class="stat-lbl">支新增</span></div>
+      <div class="stat-group"><span class="stat-num c-reset">0</span><span class="stat-lbl">支重新入選</span></div>
+      <div class="stat-group"><span class="stat-num c-removed">0</span><span class="stat-lbl">支移除</span></div>
+      
+    </div>
+  </div>
+</div>
+</body>
+</html>
