@@ -1,9 +1,9 @@
 {
-  "run_at_utc": "2026-09-22T13:45:17Z",
-  "market_date": "2026-09-22",
+  "run_at_utc": "2026-09-23T13:57:42Z",
+  "market_date": "2026-09-23",
   "regime": "CONSOLIDATION_VOLATILE",
   "total_scanned": 150,
-  "l1_count": 118,
-  "l2_count": 30,
+  "l1_count": 117,
+  "l2_count": 32,
   "ai_count": 3
 }
