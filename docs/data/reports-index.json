@@ -313,9 +313,9 @@
     "date": "2026-09-24",
     "weekday": "四",
     "active": 0,
-    "watch": 2,
+    "watch": 3,
     "invalid": 2,
-    "new": 2,
+    "new": 3,
     "reset": 0,
     "removed": 0
   }
